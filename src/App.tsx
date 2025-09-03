@@ -184,8 +184,8 @@ function App() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Pedidos</h3>
-              <p className="text-gray-600">Acompanhe pedidos aprovados</p>
-              <p className="text-2xl font-bold text-orange-600 mt-2">{orders.length}</p>
+              <p className="text-gray-600">Pedidos concluídos</p>
+              <p className="text-2xl font-bold text-orange-600 mt-2">{orders.filter(order => order.status === 'completed').length}</p>
             </div>
             <ShoppingCart className="text-orange-600" size={32} />
           </div>
@@ -338,13 +338,13 @@ function App() {
               <p className="text-gray-500 text-sm text-center py-4">Nenhum pedido criado</p>
             )}
           </div>
-          {orders.length > 10 && (
+          {orders.filter(order => order.status === 'completed').length > 10 && (
             <div className="mt-4 text-center">
               <button
                 onClick={() => setActiveTab('orders')}
                 className="text-orange-600 hover:text-orange-800 text-sm font-medium"
               >
-                Ver todos os {orders.length} pedidos
+                Ver todos os {orders.filter(order => order.status === 'completed').length} pedidos concluídos
               </button>
             </div>
           )}
