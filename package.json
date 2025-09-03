@@ -1,7 +1,7 @@
 {
 "scripts": {
   "start": "App.tsx"
-}
+},
 
   "name": "vite-react-typescript-starter",
   "private": true,
