@@ -68,7 +68,7 @@ export const ReportsList: React.FC = () => {
         services: quote.services,
         products: quote.products,
         total: quote.total,
-        status: 'pending' as const,
+        status: 'completed' as const, // Orçamentos aprovados são considerados concluídos para estatísticas
         createdAt: quote.createdAt,
         isFromQuote: true
       }));
