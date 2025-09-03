@@ -492,11 +492,11 @@ function App() {
                 <img 
                   src={companySettings.logo} 
                   alt="Logo da empresa" 
-                  className="w-8 h-6 object-contain rounded"
+                  className="w-16 h-12 object-contain rounded"
                 />
               ) : (
-                <div className="w-8 h-6 bg-blue-600 rounded flex items-center justify-center">
-                  <BarChart3 className="text-white" size={16} />
+                <div className="w-16 h-12 bg-blue-600 rounded flex items-center justify-center">
+                  <BarChart3 className="text-white" size={32} />
                 </div>
               )}
               <div className="text-sm text-gray-600">
