@@ -60,7 +60,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         {/* Logo e Título */}
         <div className="text-center mb-8">
           {companySettings?.logo ? (
-            <div className="mx-auto w-20 h-16 mb-4 flex items-center justify-center">
+            <div className="mx-auto w-40 h-32 mb-4 flex items-center justify-center">
               <img 
                 src={companySettings.logo} 
                 alt="Logo da empresa" 
@@ -68,8 +68,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
               />
             </div>
           ) : (
-            <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-              <Shield className="text-white" size={32} />
+            <div className="mx-auto w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+              <Shield className="text-white" size={64} />
             </div>
           )}
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
