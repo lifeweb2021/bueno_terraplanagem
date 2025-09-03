@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "App.tsx",
+    "start": "src/App.tsx",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
