@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User as UserIcon, Lock, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
 import { authService } from '../utils/auth';
+import { storage } from '../utils/storage';
 import { LoginCredentials } from '../types/auth';
 
 interface LoginFormProps {
@@ -15,6 +16,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [companySettings, setCompanySettings] = useState(() => storage.getCompanySettings());
+
+  React.useEffect(() => {
+    setCompanySettings(storage.getCompanySettings());
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,11 +59,21 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         {/* Logo e Título */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-            <Shield className="text-white" size={32} />
-          </div>
+          {companySettings?.logo ? (
+            <div className="mx-auto w-20 h-16 mb-4 flex items-center justify-center">
+              <img 
+                src={companySettings.logo} 
+                alt="Logo da empresa" 
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+              <Shield className="text-white" size={32} />
+            </div>
+          )}
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Sistema de Gestão Comercial
+            {companySettings?.companyName || 'Sistema de Gestão Comercial'}
           </h1>
           <p className="text-gray-600">
             Faça login para acessar o painel
@@ -133,21 +149,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
             )}
           </button>
         </form>
-
-        {/* Informações de Acesso Padrão */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <Shield className="text-blue-600 mr-2 mt-0.5" size={16} />
-            <div className="text-sm text-blue-800">
-              <p className="font-medium mb-1">Acesso Padrão:</p>
-              <p>Usuário: <code className="bg-blue-100 px-1 rounded">admin</code></p>
-              <p>Senha: <code className="bg-blue-100 px-1 rounded">admin123</code></p>
-              <p className="text-xs text-blue-600 mt-2">
-                Altere a senha após o primeiro acesso
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
