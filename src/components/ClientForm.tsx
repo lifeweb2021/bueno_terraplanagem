@@ -265,7 +265,8 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
             />
           </div>
 
-            <div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
               <select
                 value={formData.state || ''}
@@ -281,7 +282,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
               </select>
             </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
               <select
