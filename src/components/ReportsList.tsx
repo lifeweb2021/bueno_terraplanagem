@@ -50,6 +50,9 @@ export const ReportsList: React.FC = () => {
   const [cities, setCities] = useState(storage.getCities());
   const [filteredCitiesForReports, setFilteredCitiesForReports] = useState(storage.getCities());
 
+  // Estatísticas independentes dos filtros
+  const [completedOrders, setCompletedOrders] = useState<Order[]>([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
   useEffect(() => {
     loadData();
   }, []);
@@ -118,7 +121,7 @@ export const ReportsList: React.FC = () => {
         services: quote.services,
         products: quote.products,
         total: quote.total,
-        status: 'completed' as const, // Orçamentos aprovados são considerados concluídos para estatísticas
+        status: 'completed' as const,
         createdAt: quote.createdAt,
         isFromQuote: true
       }));
@@ -129,6 +132,13 @@ export const ReportsList: React.FC = () => {
     setOrders(allOrders);
     setStates(loadedStates);
     setCities(loadedCities);
+    
+    // Calcular estatísticas independentes dos filtros
+    const completed = allOrders.filter(order => order.status === 'completed');
+    const revenue = completed.reduce((sum, order) => sum + order.total, 0);
+    
+    setCompletedOrders(completed);
+    setTotalRevenue(revenue);
   };
 
   // Obter cidades únicas
@@ -538,9 +548,7 @@ export const ReportsList: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Pedidos Concluídos</h3>
-              <p className="text-3xl font-bold text-green-600">
-                {orders.filter(order => order.status === 'completed').length}
-              </p>
+              <p className="text-3xl font-bold text-green-600">{completedOrders.length}</p>
             </div>
             <ShoppingCart className="text-green-600" size={32} />
           </div>
@@ -550,13 +558,7 @@ export const ReportsList: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Faturamento Total</h3>
-              <p className="text-2xl font-bold text-purple-600">
-                {formatCurrency(
-                  orders
-                    .filter(order => order.status === 'completed')
-                    .reduce((sum, order) => sum + order.total, 0)
-                )}
-              </p>
+              <p className="text-2xl font-bold text-purple-600">{formatCurrency(totalRevenue)}</p>
             </div>
             <FileBarChart className="text-purple-600" size={32} />
           </div>
