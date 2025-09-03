@@ -1,6 +1,6 @@
 {
 "scripts": {
-  "start": "tailwind.config.js"
+  "start": "App.tsx"
 }
 
   "name": "vite-react-typescript-starter",
