@@ -75,26 +75,28 @@ export const ReportsList: React.FC = () => {
 
   // Filtrar cidades para relatório de clientes
   const getFilteredCitiesForClients = () => {
-    if (clientsFilters.state !== 'all') {
+    if (clientsFilters.state === 'all') {
+      return cities;
+    } else {
       const selectedState = states.find(s => s.code === clientsFilters.state);
       if (selectedState) {
         return cities.filter(c => c.stateId === selectedState.id);
       }
       return [];
     }
-    return cities;
   };
 
   // Filtrar cidades para relatório de pedidos por cliente
   const getFilteredCitiesForClientOrders = () => {
-    if (clientOrdersFilters.state !== 'all') {
+    if (clientOrdersFilters.state === 'all') {
+      return cities;
+    } else {
       const selectedState = states.find(s => s.code === clientOrdersFilters.state);
       if (selectedState) {
         return cities.filter(c => c.stateId === selectedState.id);
       }
       return [];
     }
-    return cities;
   };
   const loadData = () => {
     const loadedClients = storage.getClients();
@@ -261,7 +263,6 @@ export const ReportsList: React.FC = () => {
             value={servicesFilters.city}
             onChange={(e) => setServicesFilters({ ...servicesFilters, city: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            disabled={servicesFilters.state === 'all'}
           >
             <option value="all">Todas as cidades</option>
             {filteredCitiesForReports.map(city => (
@@ -270,9 +271,6 @@ export const ReportsList: React.FC = () => {
               </option>
             ))}
           </select>
-          {servicesFilters.state === 'all' && (
-            <p className="mt-1 text-sm text-gray-500">Selecione um estado primeiro</p>
-          )}
         </div>
 
         <div>
@@ -351,7 +349,6 @@ export const ReportsList: React.FC = () => {
             value={clientsFilters.city}
             onChange={(e) => setClientsFilters({ ...clientsFilters, city: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            disabled={clientsFilters.state === 'all'}
           >
             <option value="all">Todas as cidades</option>
             {getFilteredCitiesForClients().map(city => (
@@ -360,9 +357,6 @@ export const ReportsList: React.FC = () => {
               </option>
             ))}
           </select>
-          {clientsFilters.state === 'all' && (
-            <p className="mt-1 text-sm text-gray-500">Selecione um estado primeiro</p>
-          )}
         </div>
 
         <div>
@@ -422,7 +416,6 @@ export const ReportsList: React.FC = () => {
             value={clientOrdersFilters.city}
             onChange={(e) => setClientOrdersFilters({ ...clientOrdersFilters, city: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            disabled={clientOrdersFilters.state === 'all'}
           >
             <option value="all">Todas as cidades</option>
             {getFilteredCitiesForClientOrders().map(city => (
@@ -431,9 +424,6 @@ export const ReportsList: React.FC = () => {
               </option>
             ))}
           </select>
-          {clientOrdersFilters.state === 'all' && (
-            <p className="mt-1 text-sm text-gray-500">Selecione um estado primeiro</p>
-          )}
         </div>
 
         <div>
