@@ -268,22 +268,6 @@ export const ReportsList: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
-          <select
-            value={servicesFilters.city}
-            onChange={(e) => setServicesFilters({ ...servicesFilters, city: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">Todas as cidades</option>
-            {filteredCitiesForReports.map(city => (
-              <option key={city.id} value={city.name}>
-                {city.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
           <select
             value={servicesFilters.state}
@@ -294,6 +278,22 @@ export const ReportsList: React.FC = () => {
             {getUniqueStates().map(state => (
               <option key={state.code} value={state.code}>
                 {state.name} ({state.code})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
+          <select
+            value={servicesFilters.city}
+            onChange={(e) => setServicesFilters({ ...servicesFilters, city: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Todas as cidades</option>
+            {filteredCitiesForReports.map(city => (
+              <option key={city.id} value={city.name}>
+                {city.name}
               </option>
             ))}
           </select>
@@ -354,22 +354,6 @@ export const ReportsList: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
-          <select
-            value={clientsFilters.city}
-            onChange={(e) => setClientsFilters({ ...clientsFilters, city: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">Todas as cidades</option>
-            {getFilteredCitiesForClients().map(city => (
-              <option key={city.id} value={city.name}>
-                {city.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
           <select
             value={clientsFilters.state}
@@ -380,6 +364,22 @@ export const ReportsList: React.FC = () => {
             {getUniqueStates().map(state => (
               <option key={state.code} value={state.code}>
                 {state.name} ({state.code})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
+          <select
+            value={clientsFilters.city}
+            onChange={(e) => setClientsFilters({ ...clientsFilters, city: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Todas as cidades</option>
+            {getFilteredCitiesForClients().map(city => (
+              <option key={city.id} value={city.name}>
+                {city.name}
               </option>
             ))}
           </select>
@@ -421,22 +421,6 @@ export const ReportsList: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
-          <select
-            value={clientOrdersFilters.city}
-            onChange={(e) => setClientOrdersFilters({ ...clientOrdersFilters, city: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">Todas as cidades</option>
-            {getFilteredCitiesForClientOrders().map(city => (
-              <option key={city.id} value={city.name}>
-                {city.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
           <select
             value={clientOrdersFilters.state}
@@ -447,6 +431,22 @@ export const ReportsList: React.FC = () => {
             {getUniqueStates().map(state => (
               <option key={state.code} value={state.code}>
                 {state.name} ({state.code})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
+          <select
+            value={clientOrdersFilters.city}
+            onChange={(e) => setClientOrdersFilters({ ...clientOrdersFilters, city: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Todas as cidades</option>
+            {getFilteredCitiesForClientOrders().map(city => (
+              <option key={city.id} value={city.name}>
+                {city.name}
               </option>
             ))}
           </select>
