@@ -48,11 +48,54 @@ export const ReportsList: React.FC = () => {
 
   const [states, setStates] = useState(storage.getStates());
   const [cities, setCities] = useState(storage.getCities());
+  const [filteredCitiesForReports, setFilteredCitiesForReports] = useState(storage.getCities());
 
   useEffect(() => {
     loadData();
   }, []);
 
+  // Filtrar cidades baseado no estado selecionado nos filtros de serviços
+  useEffect(() => {
+    if (servicesFilters.state !== 'all') {
+      const selectedState = states.find(s => s.code === servicesFilters.state);
+      if (selectedState) {
+        const stateCities = cities.filter(c => c.stateId === selectedState.id);
+        setFilteredCitiesForReports(stateCities);
+        // Reset cidade se não estiver na lista filtrada
+        if (servicesFilters.city !== 'all' && !stateCities.some(c => c.name === servicesFilters.city)) {
+          setServicesFilters(prev => ({ ...prev, city: 'all' }));
+        }
+      } else {
+        setFilteredCitiesForReports([]);
+      }
+    } else {
+      setFilteredCitiesForReports(cities);
+    }
+  }, [servicesFilters.state, states, cities]);
+
+  // Filtrar cidades para relatório de clientes
+  const getFilteredCitiesForClients = () => {
+    if (clientsFilters.state !== 'all') {
+      const selectedState = states.find(s => s.code === clientsFilters.state);
+      if (selectedState) {
+        return cities.filter(c => c.stateId === selectedState.id);
+      }
+      return [];
+    }
+    return cities;
+  };
+
+  // Filtrar cidades para relatório de pedidos por cliente
+  const getFilteredCitiesForClientOrders = () => {
+    if (clientOrdersFilters.state !== 'all') {
+      const selectedState = states.find(s => s.code === clientOrdersFilters.state);
+      if (selectedState) {
+        return cities.filter(c => c.stateId === selectedState.id);
+      }
+      return [];
+    }
+    return cities;
+  };
   const loadData = () => {
     const loadedClients = storage.getClients();
     const loadedOrders = storage.getOrders();
@@ -218,21 +261,25 @@ export const ReportsList: React.FC = () => {
             value={servicesFilters.city}
             onChange={(e) => setServicesFilters({ ...servicesFilters, city: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            disabled={servicesFilters.state === 'all'}
           >
             <option value="all">Todas as cidades</option>
-            {getUniqueCities().map(city => (
-              <option key={city} value={city}>
-                {city}
+            {filteredCitiesForReports.map(city => (
+              <option key={city.id} value={city.name}>
+                {city.name}
               </option>
             ))}
           </select>
+          {servicesFilters.state === 'all' && (
+            <p className="mt-1 text-sm text-gray-500">Selecione um estado primeiro</p>
+          )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
           <select
             value={servicesFilters.state}
-            onChange={(e) => setServicesFilters({ ...servicesFilters, state: e.target.value })}
+            onChange={(e) => setServicesFilters({ ...servicesFilters, state: e.target.value, city: 'all' })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">Todos os estados</option>
@@ -304,21 +351,25 @@ export const ReportsList: React.FC = () => {
             value={clientsFilters.city}
             onChange={(e) => setClientsFilters({ ...clientsFilters, city: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            disabled={clientsFilters.state === 'all'}
           >
             <option value="all">Todas as cidades</option>
-            {getUniqueCities().map(city => (
-              <option key={city} value={city}>
-                {city}
+            {getFilteredCitiesForClients().map(city => (
+              <option key={city.id} value={city.name}>
+                {city.name}
               </option>
             ))}
           </select>
+          {clientsFilters.state === 'all' && (
+            <p className="mt-1 text-sm text-gray-500">Selecione um estado primeiro</p>
+          )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
           <select
             value={clientsFilters.state}
-            onChange={(e) => setClientsFilters({ ...clientsFilters, state: e.target.value })}
+            onChange={(e) => setClientsFilters({ ...clientsFilters, state: e.target.value, city: 'all' })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">Todos os estados</option>
@@ -371,21 +422,25 @@ export const ReportsList: React.FC = () => {
             value={clientOrdersFilters.city}
             onChange={(e) => setClientOrdersFilters({ ...clientOrdersFilters, city: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            disabled={clientOrdersFilters.state === 'all'}
           >
             <option value="all">Todas as cidades</option>
-            {getUniqueCities().map(city => (
-              <option key={city} value={city}>
-                {city}
+            {getFilteredCitiesForClientOrders().map(city => (
+              <option key={city.id} value={city.name}>
+                {city.name}
               </option>
             ))}
           </select>
+          {clientOrdersFilters.state === 'all' && (
+            <p className="mt-1 text-sm text-gray-500">Selecione um estado primeiro</p>
+          )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
           <select
             value={clientOrdersFilters.state}
-            onChange={(e) => setClientOrdersFilters({ ...clientOrdersFilters, state: e.target.value })}
+            onChange={(e) => setClientOrdersFilters({ ...clientOrdersFilters, state: e.target.value, city: 'all' })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">Todos os estados</option>
