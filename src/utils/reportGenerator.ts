@@ -91,9 +91,7 @@ export const generateOrdersReportPDF = (orders: Order[], filters: any) => {
   }
   
   if (filters.state !== 'all') {
-    const states = storage.getStates();
-    const selectedState = states.find(s => s.code === filters.state);
-    doc.text(`Estado: ${selectedState ? `${selectedState.name} (${selectedState.code})` : filters.state}`, 20, currentY);
+    doc.text(`Estado: ${filters.state}`, 20, currentY);
     currentY += 4;
   }
   
@@ -214,9 +212,7 @@ export const generateClientsReportPDF = (clients: Client[], filters: any) => {
   }
   
   if (filters.state !== 'all') {
-    const states = storage.getStates();
-    const selectedState = states.find(s => s.code === filters.state);
-    doc.text(`Estado: ${selectedState ? `${selectedState.name} (${selectedState.code})` : filters.state}`, 20, currentY);
+    doc.text(`Estado: ${filters.state}`, 20, currentY);
     currentY += 4;
   }
   
