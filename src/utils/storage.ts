@@ -1,4 +1,4 @@
-import { Client, Quote, Order, CompanySettings } from '../types';
+import { Client, Quote, Order, CompanySettings, State, City } from '../types';
 import type { User, AuthSession } from '../types/auth';
 import { authService } from './auth';
 
@@ -7,7 +7,9 @@ const STORAGE_KEYS = {
   QUOTES: 'quotes',
   ORDERS: 'orders',
   COUNTERS: 'counters',
-  COMPANY_SETTINGS: 'company_settings'
+  COMPANY_SETTINGS: 'company_settings',
+  STATES: 'states',
+  CITIES: 'cities'
 } as const;
 
 export interface Counters {
@@ -179,5 +181,136 @@ export const storage = {
   saveAuthSession: (session: AuthSession) => authService.saveAuthSession(session),
   clearAuthSession: () => authService.clearAuthSession(),
   authenticateUser: (username: string, password: string) => authService.authenticateUser({ username, password }),
-  initializeDefaultUser: () => authService.initializeDefaultUser()
+  initializeDefaultUser: () => authService.initializeDefaultUser(),
+
+  // States
+  getStates: (): State[] => {
+    const data = localStorage.getItem(STORAGE_KEYS.STATES);
+    const states = data ? JSON.parse(data) : [];
+    return states.map((state: any) => ({
+      ...state,
+      createdAt: new Date(state.createdAt)
+    }));
+  },
+
+  saveStates: (states: State[]): void => {
+    localStorage.setItem(STORAGE_KEYS.STATES, JSON.stringify(states));
+  },
+
+  addState: (state: State): void => {
+    const states = storage.getStates();
+    states.push(state);
+    storage.saveStates(states);
+  },
+
+  updateState: (id: string, updatedState: State): void => {
+    const states = storage.getStates();
+    const index = states.findIndex(s => s.id === id);
+    if (index !== -1) {
+      states[index] = updatedState;
+      storage.saveStates(states);
+    }
+  },
+
+  deleteState: (id: string): void => {
+    const states = storage.getStates().filter(s => s.id !== id);
+    storage.saveStates(states);
+  },
+
+  isStateCodeUnique: (code: string, excludeId?: string): boolean => {
+    const states = storage.getStates();
+    return !states.some(state => 
+      state.code.toLowerCase() === code.toLowerCase() && state.id !== excludeId
+    );
+  },
+
+  isStateNameUnique: (name: string, excludeId?: string): boolean => {
+    const states = storage.getStates();
+    return !states.some(state => 
+      state.name.toLowerCase() === name.toLowerCase() && state.id !== excludeId
+    );
+  },
+
+  // Cities
+  getCities: (): City[] => {
+    const data = localStorage.getItem(STORAGE_KEYS.CITIES);
+    const cities = data ? JSON.parse(data) : [];
+    const states = storage.getStates();
+    
+    return cities.map((city: any) => ({
+      ...city,
+      createdAt: new Date(city.createdAt),
+      state: states.find(s => s.id === city.stateId)
+    }));
+  },
+
+  saveCities: (cities: City[]): void => {
+    localStorage.setItem(STORAGE_KEYS.CITIES, JSON.stringify(cities));
+  },
+
+  addCity: (city: City): void => {
+    const cities = storage.getCities();
+    cities.push(city);
+    storage.saveCities(cities);
+  },
+
+  updateCity: (id: string, updatedCity: City): void => {
+    const cities = storage.getCities();
+    const index = cities.findIndex(c => c.id === id);
+    if (index !== -1) {
+      cities[index] = updatedCity;
+      storage.saveCities(cities);
+    }
+  },
+
+  deleteCity: (id: string): void => {
+    const cities = storage.getCities().filter(c => c.id !== id);
+    storage.saveCities(cities);
+  },
+
+  isCityNameUnique: (name: string, stateId: string, excludeId?: string): boolean => {
+    const cities = storage.getCities();
+    return !cities.some(city => 
+      city.name.toLowerCase() === name.toLowerCase() && 
+      city.stateId === stateId && 
+      city.id !== excludeId
+    );
+  },
+
+  // Initialize default states and cities
+  initializeDefaultLocations: (): void => {
+    const states = storage.getStates();
+    const cities = storage.getCities();
+    
+    if (states.length === 0) {
+      const defaultStates: State[] = [
+        { id: crypto.randomUUID(), name: 'São Paulo', code: 'SP', createdAt: new Date() },
+        { id: crypto.randomUUID(), name: 'Rio de Janeiro', code: 'RJ', createdAt: new Date() },
+        { id: crypto.randomUUID(), name: 'Minas Gerais', code: 'MG', createdAt: new Date() },
+        { id: crypto.randomUUID(), name: 'Paraná', code: 'PR', createdAt: new Date() },
+        { id: crypto.randomUUID(), name: 'Rio Grande do Sul', code: 'RS', createdAt: new Date() }
+      ];
+      storage.saveStates(defaultStates);
+    }
+    
+    if (cities.length === 0) {
+      const loadedStates = storage.getStates();
+      const spState = loadedStates.find(s => s.code === 'SP');
+      const rjState = loadedStates.find(s => s.code === 'RJ');
+      const mgState = loadedStates.find(s => s.code === 'MG');
+      
+      if (spState && rjState && mgState) {
+        const defaultCities: City[] = [
+          { id: crypto.randomUUID(), name: 'São Paulo', stateId: spState.id, createdAt: new Date() },
+          { id: crypto.randomUUID(), name: 'Campinas', stateId: spState.id, createdAt: new Date() },
+          { id: crypto.randomUUID(), name: 'Santos', stateId: spState.id, createdAt: new Date() },
+          { id: crypto.randomUUID(), name: 'Rio de Janeiro', stateId: rjState.id, createdAt: new Date() },
+          { id: crypto.randomUUID(), name: 'Niterói', stateId: rjState.id, createdAt: new Date() },
+          { id: crypto.randomUUID(), name: 'Belo Horizonte', stateId: mgState.id, createdAt: new Date() },
+          { id: crypto.randomUUID(), name: 'Uberlândia', stateId: mgState.id, createdAt: new Date() }
+        ];
+        storage.saveCities(defaultCities);
+      }
+    }
+  }
 };

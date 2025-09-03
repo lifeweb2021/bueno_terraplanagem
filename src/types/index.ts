@@ -85,3 +85,18 @@ export interface Order {
   completedAt?: Date;
   isFromQuote?: boolean; // Indica se é um pedido temporário de orçamento aprovado
 }
+
+export interface State {
+  id: string;
+  name: string;
+  code: string; // UF
+  createdAt: Date;
+}
+
+export interface City {
+  id: string;
+  name: string;
+  stateId: string;
+  state?: State;
+  createdAt: Date;
+}

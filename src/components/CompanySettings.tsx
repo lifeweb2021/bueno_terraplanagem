@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { CompanySettings as CompanySettingsType } from '../types';
 import { storage } from '../utils/storage';
-import { Building2, Save, Upload, X, CheckCircle, Mail, Settings } from 'lucide-react';
+import { Building2, Save, Upload, X, CheckCircle, Mail, Settings, Users, MapPin, UserCog } from 'lucide-react';
 import { validateCNPJ, formatDocument, formatPhone, formatZipCode } from '../utils/validators';
+import { UserManagement } from './UserManagement';
+import { LocationManagement } from './LocationManagement';
+import { authService } from '../utils/auth';
 
 export const CompanySettings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'company' | 'email'>('company');
+  const [activeTab, setActiveTab] = useState<'company' | 'email' | 'users' | 'locations'>('company');
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [settings, setSettings] = useState<Partial<CompanySettingsType>>({
     companyName: '',
     cnpj: '',
@@ -40,6 +44,13 @@ export const CompanySettings: React.FC = () => {
     if (existingSettings) {
       setSettings(existingSettings);
     }
+    
+    // Verificar usuário atual
+    const session = authService.getAuthSession();
+    setCurrentUser(session);
+    
+    // Inicializar localizações padrão
+    storage.initializeDefaultLocations();
   }, []);
 
   const validateForm = () => {
@@ -206,6 +217,26 @@ export const CompanySettings: React.FC = () => {
   const closeSuccessModal = () => {
     setShowSuccessModal(false);
   };
+
+  const renderUserManagement = () => (
+    <div>
+      <div className="flex items-center mb-6">
+        <UserCog className="text-blue-600 mr-3" size={32} />
+        <h3 className="text-xl font-semibold text-gray-900">Gerenciamento de Usuários</h3>
+      </div>
+      <UserManagement />
+    </div>
+  );
+
+  const renderLocationManagement = () => (
+    <div>
+      <div className="flex items-center mb-6">
+        <MapPin className="text-blue-600 mr-3" size={32} />
+        <h3 className="text-xl font-semibold text-gray-900">Estados e Cidades</h3>
+      </div>
+      <LocationManagement />
+    </div>
+  );
 
   const renderCompanyForm = () => (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -585,11 +616,38 @@ export const CompanySettings: React.FC = () => {
               <Mail size={20} className="inline mr-2" />
               Configurações de Email
             </button>
+            {currentUser?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'users'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <UserCog size={20} className="inline mr-2" />
+                Usuários
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab('locations')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'locations'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <MapPin size={20} className="inline mr-2" />
+              Estados e Cidades
+            </button>
           </nav>
         </div>
 
         <div className="p-8">
-          {activeTab === 'company' ? renderCompanyForm() : renderEmailForm()}
+          {activeTab === 'company' && renderCompanyForm()}
+          {activeTab === 'email' && renderEmailForm()}
+          {activeTab === 'users' && currentUser?.role === 'admin' && renderUserManagement()}
+          {activeTab === 'locations' && renderLocationManagement()}
         </div>
       </div>
 

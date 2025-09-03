@@ -11,6 +11,9 @@ interface ClientFormProps {
 }
 
 export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => {
+  const [states, setStates] = useState(storage.getStates());
+  const [cities, setCities] = useState(storage.getCities());
+  const [filteredCities, setFilteredCities] = useState(storage.getCities());
   const [formData, setFormData] = useState<Partial<Client>>({
     type: 'fisica',
     name: '',
@@ -27,6 +30,27 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    // Carregar dados atualizados
+    setStates(storage.getStates());
+    setCities(storage.getCities());
+  }, []);
+
+  useEffect(() => {
+    // Filtrar cidades baseado no estado selecionado
+    if (formData.state) {
+      const selectedState = states.find(s => s.code === formData.state);
+      if (selectedState) {
+        const stateCities = cities.filter(c => c.stateId === selectedState.id);
+        setFilteredCities(stateCities);
+      } else {
+        setFilteredCities([]);
+      }
+    } else {
+      setFilteredCities(cities);
+    }
+  }, [formData.state, states, cities]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -244,25 +268,38 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
-              <input
-                type="text"
+              <select
                 value={formData.city || ''}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Digite a cidade"
-              />
+                disabled={!formData.state}
+              >
+                <option value="">Selecione uma cidade</option>
+                {filteredCities.map(city => (
+                  <option key={city.id} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+              {!formData.state && (
+                <p className="mt-1 text-sm text-gray-500">Selecione um estado primeiro</p>
+              )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-              <input
-                type="text"
+              <select
                 value={formData.state || ''}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, state: e.target.value, city: '' })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="UF"
-                maxLength={2}
-              />
+              >
+                <option value="">Selecione um estado</option>
+                {states.map(state => (
+                  <option key={state.id} value={state.code}>
+                    {state.name} ({state.code})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>

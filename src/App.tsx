@@ -100,7 +100,6 @@ function App() {
     { id: 'quotes', label: 'Orçamentos', icon: FileText },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
     { id: 'reports', label: 'Relatórios', icon: FileBarChart },
-    ...(currentUser?.role === 'admin' ? [{ id: 'users', label: 'Usuários', icon: UserCog }] : []),
     { id: 'settings', label: 'Configurações', icon: Settings },
   ] as const;
 
@@ -364,8 +363,6 @@ function App() {
         return <OrderList />;
       case 'reports':
         return <ReportsList />;
-      case 'users':
-        return currentUser?.role === 'admin' ? <UserManagement /> : renderDashboard();
       case 'settings':
         return <CompanySettings />;
       case 'dashboard':
