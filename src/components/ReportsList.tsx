@@ -46,6 +46,9 @@ export const ReportsList: React.FC = () => {
     state: 'all'
   });
 
+  const [states, setStates] = useState(storage.getStates());
+  const [cities, setCities] = useState(storage.getCities());
+
   useEffect(() => {
     loadData();
   }, []);
@@ -53,6 +56,8 @@ export const ReportsList: React.FC = () => {
   const loadData = () => {
     const loadedClients = storage.getClients();
     const loadedOrders = storage.getOrders();
+    const loadedStates = storage.getStates();
+    const loadedCities = storage.getCities();
     const quotes = storage.getQuotes();
     
     // Incluir pedidos de orçamentos aprovados
@@ -77,26 +82,18 @@ export const ReportsList: React.FC = () => {
     
     setClients(loadedClients);
     setOrders(allOrders);
+    setStates(loadedStates);
+    setCities(loadedCities);
   };
 
   // Obter cidades únicas
   const getUniqueCities = () => {
-    const cities = clients
-      .map(client => client.city)
-      .filter(city => city && city.trim() !== '')
-      .filter((city, index, array) => array.indexOf(city) === index)
-      .sort();
-    return cities;
+    return cities.map(city => city.name).sort();
   };
 
   // Obter estados únicos
   const getUniqueStates = () => {
-    const states = clients
-      .map(client => client.state)
-      .filter(state => state && state.trim() !== '')
-      .filter((state, index, array) => array.indexOf(state) === index)
-      .sort();
-    return states;
+    return states.map(state => ({ name: state.name, code: state.code })).sort((a, b) => a.name.localeCompare(b.name));
   };
 
   const generateServicesReport = () => {
@@ -240,8 +237,8 @@ export const ReportsList: React.FC = () => {
           >
             <option value="all">Todos os estados</option>
             {getUniqueStates().map(state => (
-              <option key={state} value={state}>
-                {state}
+              <option key={state.code} value={state.code}>
+                {state.name} ({state.code})
               </option>
             ))}
           </select>
@@ -326,8 +323,8 @@ export const ReportsList: React.FC = () => {
           >
             <option value="all">Todos os estados</option>
             {getUniqueStates().map(state => (
-              <option key={state} value={state}>
-                {state}
+              <option key={state.code} value={state.code}>
+                {state.name} ({state.code})
               </option>
             ))}
           </select>
@@ -393,8 +390,8 @@ export const ReportsList: React.FC = () => {
           >
             <option value="all">Todos os estados</option>
             {getUniqueStates().map(state => (
-              <option key={state} value={state}>
-                {state}
+              <option key={state.code} value={state.code}>
+                {state.name} ({state.code})
               </option>
             ))}
           </select>
