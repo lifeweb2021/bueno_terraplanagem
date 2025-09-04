@@ -26,6 +26,9 @@ function App() {
   }, []);
 
   const loadAllData = async () => {
+    // Initialize default admin user
+    await supabaseAuth.initializeDefaultUser();
+    
     // Check existing session
     const session = await supabaseAuth.getSession();
     if (session) {
