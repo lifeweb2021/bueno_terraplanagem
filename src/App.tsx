@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Users, FileText, ShoppingCart, BarChart3, Settings, FileBarChart, LogOut, UserCog, Menu, X } from 'lucide-react';
 import { ClientList } from './components/ClientList';
 import { QuoteList } from './components/QuoteList';
-import { OrderList } from './components/OrderList';
+import OrderList from './components/OrderList';
 import { CompanySettings } from './components/CompanySettings';
 import { ReportsList } from './components/ReportsList';
 import { LoginForm } from './components/LoginForm';
