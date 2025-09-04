@@ -666,7 +666,8 @@ export const supabaseStorage = {
       const { data, error } = await supabase
         .from('counters')
         .select('*')
-        .single();
+        .maybeSingle();
+        //.single();
       
       if (error) {
         throw error;
