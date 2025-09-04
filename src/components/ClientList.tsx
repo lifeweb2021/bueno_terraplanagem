@@ -58,6 +58,10 @@ export const ClientList: React.FC = () => {
         await supabaseStorage.addClient(client);
         dataManager.updateLocalData('clients', 'add', client);
       }
+      
+      // Forçar atualização dos dados locais
+      await dataManager.invalidateAndReload('clients');
+      
       setShowForm(false);
       setEditingClient(undefined);
       

@@ -87,7 +87,10 @@ const OrderList: React.FC = () => {
       };
 
       await supabaseStorage.updateOrder(orderId, updatedOrder);
-     dataManager.updateLocalData('orders', 'update', updatedOrder, orderId);
+      dataManager.updateLocalData('orders', 'update', updatedOrder, orderId);
+      
+      // Forçar atualização dos dados locais
+      await dataManager.invalidateAndReload('orders');
       
       if (newStatus === 'completed') {
         setSuccessMessage('Pedido concluído com sucesso!');

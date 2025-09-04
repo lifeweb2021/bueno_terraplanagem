@@ -166,6 +166,10 @@ export const CompanySettings: React.FC = () => {
 
       await supabaseStorage.saveCompanySettings(settingsData);
       dataManager.updateLocalData('companySettings', 'update', settingsData);
+      
+      // Forçar atualização dos dados locais
+      await dataManager.invalidateAndReload('companySettings');
+      
       setShowSuccessModal(true);
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);

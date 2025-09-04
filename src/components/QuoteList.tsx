@@ -86,6 +86,10 @@ export const QuoteList: React.FC = () => {
         dataManager.updateLocalData('quotes', 'add', quote);
         await supabaseStorage.incrementCounter('quote');
       }
+      
+      // Forçar atualização dos dados locais
+      await dataManager.invalidateAndReload('quotes');
+      
       setShowForm(false);
       setEditingQuote(undefined);
       

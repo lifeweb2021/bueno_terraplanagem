@@ -127,7 +127,7 @@ class DataManager {
     switch (dataType) {
       case 'clients':
         if (operation === 'add') {
-          this.data.clients.push(item);
+          this.data.clients = [item, ...this.data.clients];
         } else if (operation === 'update' && itemId) {
           const index = this.data.clients.findIndex(c => c.id === itemId);
           if (index !== -1) {
@@ -139,7 +139,7 @@ class DataManager {
         break;
       case 'quotes':
         if (operation === 'add') {
-          this.data.quotes.push(item);
+          this.data.quotes = [item, ...this.data.quotes];
         } else if (operation === 'update' && itemId) {
           const index = this.data.quotes.findIndex(q => q.id === itemId);
           if (index !== -1) {
@@ -151,7 +151,7 @@ class DataManager {
         break;
       case 'orders':
         if (operation === 'add') {
-          this.data.orders.push(item);
+          this.data.orders = [item, ...this.data.orders];
         } else if (operation === 'update' && itemId) {
           const index = this.data.orders.findIndex(o => o.id === itemId);
           if (index !== -1) {
