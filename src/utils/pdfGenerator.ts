@@ -3,10 +3,10 @@ import { Quote, Order, Client } from '../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from './validators';
-import { storage } from './storage';
+import { supabaseStorage } from './supabaseStorage';
 
-const addHeader = (doc: jsPDF, title: string) => {
-  const companySettings = storage.getCompanySettings();
+const addHeader = async (doc: jsPDF, title: string) => {
+  const companySettings = await supabaseStorage.getCompanySettings();
   
   if (companySettings) {
     // Logo (se existir)
@@ -280,8 +280,8 @@ const addReceiptFooter = (doc: jsPDF, order: Order, yPosition: number, quote?: Q
   doc.text('_________________________________', 20, signatureY);
   doc.text('Assinatura da Empresa', 20, signatureY + 6);
   
-  // CNPJ da empresa
-  const companySettings = storage.getCompanySettings();
+const addReportHeader = async (doc: jsPDF, title: string) => {
+  const companySettings = await supabaseStorage.getCompanySettings();
   if (companySettings && companySettings.cnpj) {
     doc.text(`CNPJ: ${companySettings.cnpj}`, 20, signatureY + 12);
   }
@@ -303,7 +303,7 @@ export const generateQuotePDF = (quote: Quote) => {
 export const generateQuotePDFBlob = async (quote: Quote): Promise<Blob> => {
   const doc = new jsPDF('p', 'mm', 'a4');
   
-  addHeader(doc, 'ORÇAMENTO');
+  await addHeader(doc, 'ORÇAMENTO');
   
   // Informações do orçamento em uma linha
   doc.setFontSize(5);
@@ -336,10 +336,10 @@ export const generateReceiptPDFBlob = async (order: Order): Promise<Blob> => {
   const doc = new jsPDF('p', 'mm', 'a4');
   
   // Buscar o orçamento original para pegar as observações
-  const quotes = storage.getQuotes();
+  const quotes = await supabaseStorage.getQuotes();
   const originalQuote = quotes.find(q => q.id === order.quoteId);
   
-  addHeader(doc, 'RECIBO DE PAGAMENTO');
+  await addHeader(doc, 'RECIBO DE PAGAMENTO');
   
   // Informações do pedido em uma linha
   doc.setFontSize(7);
