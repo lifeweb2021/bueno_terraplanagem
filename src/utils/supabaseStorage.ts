@@ -91,9 +91,19 @@ export const supabaseStorage = {
         .maybeSingle();
        // .single();
       
-      if (error) {
+     /* if (error) {
         throw error;
-      }
+      }*/
+
+      if (error) {
+  console.error("Error fetching company settings:", error);
+  return null;
+}
+
+if (!data) {
+  console.warn("Nenhum company_settings encontrado.");
+  return null; // ou um objeto default
+}
       
       return {
         id: data.id,
