@@ -85,41 +85,9 @@ export const supabaseAuth = {
 
   // Initialize default admin user
   async initializeDefaultUser() {
-    try {
-      // Check if any users exist in the database
-      const { data: existingUsers } = await supabase
-        .from('users')
-        .select('*')
-        .limit(1);
-
-      // Only create default admin if no users exist at all
-      if (!existingUsers || existingUsers.length === 0) {
-        console.log('No users found, creating default admin user...');
-        
-        const defaultUser = {
-          id: crypto.randomUUID(),
-          username: 'admin',
-          password: 'admin123', // This will be hashed by the storage layer
-          name: 'Administrador',
-          email: 'admin@sistema.com',
-          role: 'admin' as const,
-          is_active: true,
-          created_at: new Date().toISOString()
-        };
-
-        const { error } = await supabase
-          .from('users')
-          .insert(defaultUser);
-
-        if (error) {
-          console.error('Error creating default admin user:', error);
-        } else {
-          console.log('Default admin user created successfully');
-        }
-      }
-    } catch (error) {
-      console.error('Error initializing default user:', error);
-    }
+    // Admin user should be created manually in Supabase dashboard
+    // or through the user management interface after initial setup
+    console.log('Admin user initialization skipped - use manual creation');
   },
 
   // Authenticate user against database
