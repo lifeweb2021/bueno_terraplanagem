@@ -5,7 +5,7 @@ import { Building2, Save, Upload, X, CheckCircle, Mail, Settings, Users, MapPin,
 import { validateCNPJ, formatDocument, formatPhone, formatZipCode } from '../utils/validators';
 import { UserManagement } from './UserManagement';
 import { LocationManagement } from './LocationManagement';
-import { authService } from '../utils/auth';
+import { supabaseAuth } from '../utils/supabaseAuth';
 
 export const CompanySettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'company' | 'email' | 'users' | 'locations'>('company');
@@ -45,13 +45,25 @@ export const CompanySettings: React.FC = () => {
       setSettings(existingSettings);
     }
     
-    // Verificar usuário atual
-    const session = authService.getAuthSession();
-    setCurrentUser(session);
+    // Check current user
+    loadCurrentUser();
     
     // Inicializar localizações padrão
     storage.initializeDefaultLocations();
   }, []);
+
+  const loadCurrentUser = async () => {
+    try {
+      const session = await supabaseAuth.getSession();
+      if (session?.user) {
+        setCurrentUser({
+          role: session.user.user_metadata?.role || 'user'
+        });
+      }
+    } catch (error) {
+      console.error('Error loading current user:', error);
+    }
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

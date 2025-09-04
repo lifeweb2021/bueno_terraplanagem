@@ -1,26 +1,34 @@
 import React, { useState } from 'react';
 import { User as UserIcon, Lock, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
-import { authService } from '../utils/auth';
-import { storage } from '../utils/storage';
-import { LoginCredentials } from '../types/auth';
+import { supabaseAuth } from '../utils/supabaseAuth';
+import { supabaseStorage } from '../utils/supabaseStorage';
 
 interface LoginFormProps {
   onLogin: (session: any) => void;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
-  const [formData, setFormData] = useState<LoginCredentials>({
-    username: '',
+  const [formData, setFormData] = useState({
+    email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [companySettings, setCompanySettings] = useState(() => storage.getCompanySettings());
+  const [companySettings, setCompanySettings] = useState<any>(null);
 
   React.useEffect(() => {
-    setCompanySettings(storage.getCompanySettings());
+    loadCompanySettings();
   }, []);
+
+  const loadCompanySettings = async () => {
+    try {
+      const settings = await supabaseStorage.getCompanySettings();
+      setCompanySettings(settings);
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,24 +39,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       // Simular delay de autenticação
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const user = authService.authenticateUser(formData);
+      const { user, session } = await supabaseAuth.signIn(formData.email, formData.password);
       
       if (user) {
-        const session = {
+        const sessionData = {
           userId: user.id,
-          username: user.username,
-          name: user.name,
-          role: user.role,
-          loginTime: new Date()
+          email: user.email,
+          name: user.user_metadata?.name || user.email,
+          role: user.user_metadata?.role || 'user',
+          loginTime: new Date(),
+          supabaseSession: session
         };
         
-        authService.saveAuthSession(session);
-        onLogin(session);
+        onLogin(sessionData);
       } else {
-        setError('Usuário ou senha incorretos');
+        setError('Email ou senha incorretos');
       }
     } catch (error) {
-      setError('Erro ao fazer login. Tente novamente.');
+      setError('Email ou senha incorretos');
     } finally {
       setIsLoading(false);
     }
@@ -84,18 +92,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Usuário
+              Email
             </label>
             <div className="relative">
               <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
-                type="text"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Digite seu usuário"
+                placeholder="Digite seu email"
                 required
-                autoComplete="username"
+                autoComplete="email"
               />
             </div>
           </div>

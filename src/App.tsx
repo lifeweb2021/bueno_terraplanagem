@@ -6,9 +6,8 @@ import OrderList from './components/OrderList';
 import { CompanySettings } from './components/CompanySettings';
 import { ReportsList } from './components/ReportsList';
 import { LoginForm } from './components/LoginForm';
-import { UserManagement } from './components/UserManagement';
 import { supabaseStorage } from './utils/supabaseStorage';
-import { authService } from './utils/auth';
+import { supabaseAuth } from './utils/supabaseAuth';
 import { formatCurrency } from './utils/validators';
 
 function App() {
@@ -27,23 +26,24 @@ function App() {
   }, []);
 
   const loadAllData = async () => {
-    // Inicializar usuário padrão se não existir
-    console.log('Inicializando usuário padrão...');
-    authService.initializeDefaultUser();
+    // Initialize default admin user
+    await supabaseAuth.initializeDefaultUser();
     
-    // Verificar sessão existente
-    const session = authService.getAuthSession();
-    console.log('Sessão existente:', session);
+    // Check existing session
+    const session = await supabaseAuth.getSession();
     if (session) {
-      // Verificar se a sessão ainda é válida
-      if (authService.isSessionValid(session)) {
-        console.log('Sessão válida, fazendo login automático');
-        setCurrentUser(session);
+      const user = session.user;
+      if (user) {
+        const sessionData = {
+          userId: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || user.email,
+          role: user.user_metadata?.role || 'user',
+          loginTime: new Date(),
+          supabaseSession: session
+        };
+        setCurrentUser(sessionData);
         setIsAuthenticated(true);
-      } else {
-        // Sessão expirada, limpar
-        console.log('Sessão expirada, limpando');
-        authService.clearAuthSession();
       }
     }
     
@@ -87,7 +87,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    authService.clearAuthSession();
+    supabaseAuth.signOut();
     setCurrentUser(null);
     setIsAuthenticated(false);
     setActiveTab('dashboard');
