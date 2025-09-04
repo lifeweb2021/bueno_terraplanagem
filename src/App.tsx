@@ -7,7 +7,7 @@ import { CompanySettings } from './components/CompanySettings';
 import { ReportsList } from './components/ReportsList';
 import { LoginForm } from './components/LoginForm';
 import { UserManagement } from './components/UserManagement';
-import { storage } from './utils/storage';
+import { supabaseStorage } from './utils/supabaseStorage';
 import { authService } from './utils/auth';
 import { formatCurrency } from './utils/validators';
 
@@ -15,37 +15,18 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'clients' | 'quotes' | 'orders' | 'dashboard' | 'settings' | 'reports' | 'users'>('dashboard');
-  const [companySettings, setCompanySettings] = useState(() => storage.getCompanySettings());
+  const [companySettings, setCompanySettings] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [clients, setClients] = useState(storage.getClients());
-  const [quotes, setQuotes] = useState(storage.getQuotes());
-  const [orders, setOrders] = useState(() => {
-    const loadedOrders = storage.getOrders();
-    const loadedQuotes = storage.getQuotes();
-    
-    // Incluir pedidos de orçamentos aprovados
-    const approvedQuotes = loadedQuotes.filter(quote => quote.status === 'approved');
-    const ordersFromQuotes = approvedQuotes
-      .filter(quote => !loadedOrders.some(order => order.quoteId === quote.id))
-      .map(quote => ({
-        id: `temp-${quote.id}`,
-        quoteId: quote.id,
-        clientId: quote.clientId,
-        client: quote.client,
-        number: `PED${String(storage.getCounters().order).padStart(4, '0')}`,
-        services: quote.services,
-        products: quote.products,
-        total: quote.total,
-        status: 'pending' as const,
-        createdAt: quote.createdAt,
-        isFromQuote: true
-      }));
-    
-    return [...loadedOrders, ...ordersFromQuotes];
-  });
+  const [clients, setClients] = useState<any[]>([]);
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
 
   // Verificar sessão existente ao carregar
   React.useEffect(() => {
+    loadAllData();
+  }, []);
+
+  const loadAllData = async () => {
     // Inicializar usuário padrão se não existir
     console.log('Inicializando usuário padrão...');
     authService.initializeDefaultUser();
@@ -67,15 +48,38 @@ function App() {
     }
     
     // Carregar configurações da empresa
-    setCompanySettings(storage.getCompanySettings());
-  }, []);
+    try {
+      const settings = await supabaseStorage.getCompanySettings();
+      setCompanySettings(settings);
+      
+      const loadedClients = await supabaseStorage.getClients();
+      setClients(loadedClients);
+      
+      const loadedQuotes = await supabaseStorage.getQuotes();
+      setQuotes(loadedQuotes);
+      
+      const loadedOrders = await supabaseStorage.getOrders();
+      setOrders(loadedOrders);
+    } catch (error) {
+      console.error('Erro ao carregar dados do Supabase:', error);
+    }
+  };
 
   // Atualizar configurações quando mudar de aba
   React.useEffect(() => {
     if (activeTab === 'settings') {
-      setCompanySettings(storage.getCompanySettings());
+      loadCompanySettings();
     }
   }, [activeTab]);
+
+  const loadCompanySettings = async () => {
+    try {
+      const settings = await supabaseStorage.getCompanySettings();
+      setCompanySettings(settings);
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+    }
+  };
 
   const handleLogin = (session: any) => {
     setCurrentUser(session);

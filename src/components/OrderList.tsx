@@ -203,12 +203,6 @@ export const OrderList: React.FC = () => {
   };
 
   const handleCompleteOrder = (order: Order) => {
-    // Se é um pedido temporário, criar pedido real primeiro
-    if (order.id.startsWith('temp-')) {
-      updateOrderStatus(order.id, 'completed');
-      return;
-    }
-    
     setOrderToComplete(order);
     setShowCompleteModal(true);
   };

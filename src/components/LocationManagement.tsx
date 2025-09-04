@@ -115,58 +115,68 @@ export const LocationManagement: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleStateSubmit = (e: React.FormEvent) => {
+  const handleStateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateStateForm()) return;
+    if (!(await validateStateForm())) return;
 
-    const stateData: State = {
-      id: editingState?.id || crypto.randomUUID(),
-      name: stateFormData.name.trim(),
-      code: stateFormData.code.trim().toUpperCase(),
-      createdAt: editingState?.createdAt || new Date()
-    };
+    try {
+      const stateData: State = {
+        id: editingState?.id || crypto.randomUUID(),
+        name: stateFormData.name.trim(),
+        code: stateFormData.code.trim().toUpperCase(),
+        createdAt: editingState?.createdAt || new Date()
+      };
 
-    if (editingState) {
-      storage.updateState(stateData.id, stateData);
-      setSuccessMessage('Estado atualizado com sucesso!');
-    } else {
-      storage.addState(stateData);
-      setSuccessMessage('Estado cadastrado com sucesso!');
+      if (editingState) {
+        await supabaseStorage.updateState(stateData.id, stateData);
+        setSuccessMessage('Estado atualizado com sucesso!');
+      } else {
+        await supabaseStorage.addState(stateData);
+        setSuccessMessage('Estado cadastrado com sucesso!');
+      }
+
+      loadData();
+      setShowStateForm(false);
+      setEditingState(undefined);
+      resetStateForms();
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Erro ao salvar estado:', error);
+      alert('Erro ao salvar estado. Tente novamente.');
     }
-
-    loadData();
-    setShowStateForm(false);
-    setEditingState(undefined);
-    resetStateForms();
-    setShowSuccessModal(true);
   };
 
-  const handleCitySubmit = (e: React.FormEvent) => {
+  const handleCitySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateCityForm()) return;
+    if (!(await validateCityForm())) return;
 
-    const cityData: City = {
-      id: editingCity?.id || crypto.randomUUID(),
-      name: cityFormData.name.trim(),
-      stateId: cityFormData.stateId,
-      createdAt: editingCity?.createdAt || new Date()
-    };
+    try {
+      const cityData: City = {
+        id: editingCity?.id || crypto.randomUUID(),
+        name: cityFormData.name.trim(),
+        stateId: cityFormData.stateId,
+        createdAt: editingCity?.createdAt || new Date()
+      };
 
-    if (editingCity) {
-      storage.updateCity(cityData.id, cityData);
-      setSuccessMessage('Cidade atualizada com sucesso!');
-    } else {
-      storage.addCity(cityData);
-      setSuccessMessage('Cidade cadastrada com sucesso!');
+      if (editingCity) {
+        await supabaseStorage.updateCity(cityData.id, cityData);
+        setSuccessMessage('Cidade atualizada com sucesso!');
+      } else {
+        await supabaseStorage.addCity(cityData);
+        setSuccessMessage('Cidade cadastrada com sucesso!');
+      }
+
+      loadData();
+      setShowCityForm(false);
+      setEditingCity(undefined);
+      resetCityForms();
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Erro ao salvar cidade:', error);
+      alert('Erro ao salvar cidade. Tente novamente.');
     }
-
-    loadData();
-    setShowCityForm(false);
-    setEditingCity(undefined);
-    resetCityForms();
-    setShowSuccessModal(true);
   };
 
   const handleEditState = (state: State) => {
@@ -192,29 +202,34 @@ export const LocationManagement: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!itemToDelete) return;
 
-    if (itemToDelete.type === 'state') {
-      // Verificar se há cidades vinculadas
-      const linkedCities = cities.filter(city => city.stateId === itemToDelete.item.id);
-      if (linkedCities.length > 0) {
-        alert(`Não é possível excluir este estado pois há ${linkedCities.length} cidade(s) vinculada(s) a ele.`);
-        setShowDeleteModal(false);
-        setItemToDelete(null);
-        return;
+    try {
+      if (itemToDelete.type === 'state') {
+        // Verificar se há cidades vinculadas
+        const linkedCities = cities.filter(city => city.stateId === itemToDelete.item.id);
+        if (linkedCities.length > 0) {
+          alert(`Não é possível excluir este estado pois há ${linkedCities.length} cidade(s) vinculada(s) a ele.`);
+          setShowDeleteModal(false);
+          setItemToDelete(null);
+          return;
+        }
+        await supabaseStorage.deleteState(itemToDelete.item.id);
+        setSuccessMessage('Estado excluído com sucesso!');
+      } else {
+        await supabaseStorage.deleteCity(itemToDelete.item.id);
+        setSuccessMessage('Cidade excluída com sucesso!');
       }
-      storage.deleteState(itemToDelete.item.id);
-      setSuccessMessage('Estado excluído com sucesso!');
-    } else {
-      storage.deleteCity(itemToDelete.item.id);
-      setSuccessMessage('Cidade excluída com sucesso!');
-    }
 
-    loadData();
-    setShowDeleteModal(false);
-    setItemToDelete(null);
-    setShowSuccessModal(true);
+      loadData();
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Erro ao excluir item:', error);
+      alert('Erro ao excluir item. Tente novamente.');
+    }
   };
 
   const renderStatesTab = () => (

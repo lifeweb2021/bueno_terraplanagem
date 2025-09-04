@@ -138,10 +138,6 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
       updatedAt: new Date()
     };
 
-    if (!quote) {
-      storage.incrementCounter('quote');
-    }
-
     onSave(quoteData);
   };
 

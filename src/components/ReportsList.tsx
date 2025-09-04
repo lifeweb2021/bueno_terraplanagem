@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Client, Order } from '../types';
-import { storage } from '../utils/storage';
+import { supabaseStorage } from '../utils/supabaseStorage';
 import { 
   FileBarChart, 
   Users, 
@@ -93,7 +93,6 @@ export const ReportsList: React.FC = () => {
   const getFilteredCitiesForClientOrders = () => {
     if (clientOrdersFilters.state === 'all') {
       return cities;
-    } else {
       const selectedState = states.find(s => s.code === clientOrdersFilters.state);
       if (selectedState) {
         return cities.filter(c => c.stateId === selectedState.id);
@@ -101,44 +100,27 @@ export const ReportsList: React.FC = () => {
       return [];
     }
   };
-  const loadData = () => {
-    const loadedClients = storage.getClients();
-    const loadedOrders = storage.getOrders();
-    const loadedStates = storage.getStates();
-    const loadedCities = storage.getCities();
-    const quotes = storage.getQuotes();
-    
-    // Incluir pedidos de orçamentos aprovados
-    const approvedQuotes = quotes.filter(quote => quote.status === 'approved');
-    const ordersFromQuotes: Order[] = approvedQuotes
-      .filter(quote => !loadedOrders.some(order => order.quoteId === quote.id))
-      .map(quote => ({
-        id: `temp-${quote.id}`,
-        quoteId: quote.id,
-        clientId: quote.clientId,
-        client: quote.client,
-        number: `PED${String(storage.getCounters().order).padStart(4, '0')}`,
-        services: quote.services,
-        products: quote.products,
-        total: quote.total,
-        status: 'completed' as const,
-        createdAt: quote.createdAt,
-        isFromQuote: true
-      }));
-    
-    const allOrders = [...loadedOrders, ...ordersFromQuotes];
-    
-    setClients(loadedClients);
-    setOrders(allOrders);
-    setStates(loadedStates);
-    setCities(loadedCities);
-    
-    // Calcular estatísticas independentes dos filtros
-    const completed = allOrders.filter(order => order.status === 'completed');
-    const revenue = completed.reduce((sum, order) => sum + order.total, 0);
-    
-    setCompletedOrders(completed);
-    setTotalRevenue(revenue);
+  const loadData = async () => {
+    try {
+      const loadedClients = await supabaseStorage.getClients();
+      const loadedOrders = await supabaseStorage.getOrders();
+      const loadedStates = await supabaseStorage.getStates();
+      const loadedCities = await supabaseStorage.getCities();
+      
+      setClients(loadedClients);
+      setOrders(loadedOrders);
+      setStates(loadedStates);
+      setCities(loadedCities);
+      
+      // Calcular estatísticas independentes dos filtros
+      const completed = loadedOrders.filter(order => order.status === 'completed');
+      const revenue = completed.reduce((sum, order) => sum + order.total, 0);
+      
+      setCompletedOrders(completed);
+      setTotalRevenue(revenue);
+    } catch (error) {
+      console.error('Erro ao carregar dados para relatórios:', error);
+    }
   };
 
   // Obter cidades únicas
@@ -156,7 +138,7 @@ export const ReportsList: React.FC = () => {
 
     // Aplicar filtros
     if (servicesFilters.clientId !== 'all') {
-      filteredOrders = filteredOrders.filter(order => order.clientId === servicesFilters.clientId);
+      const client = clients.find(c => c.id === servicesFilters.clientId);
     }
 
     if (servicesFilters.city !== 'all') {

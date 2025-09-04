@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
-import { storage } from '../utils/storage';
+import { supabaseStorage } from '../utils/supabaseStorage';
 import { User, Building2, Save, X } from 'lucide-react';
 import { validateCPF, validateCNPJ, formatDocument, formatPhone } from '../utils/validators';
 
@@ -11,9 +11,9 @@ interface ClientFormProps {
 }
 
 export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => {
-  const [states, setStates] = useState(storage.getStates());
-  const [cities, setCities] = useState(storage.getCities());
-  const [filteredCities, setFilteredCities] = useState(storage.getCities());
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
   const [formData, setFormData] = useState<Partial<Client>>({
     type: 'fisica',
     name: '',
@@ -32,10 +32,19 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Carregar dados atualizados
-    setStates(storage.getStates());
-    setCities(storage.getCities());
+    loadLocationData();
   }, []);
+
+  const loadLocationData = async () => {
+    try {
+      const loadedStates = await supabaseStorage.getStates();
+      const loadedCities = await supabaseStorage.getCities();
+      setStates(loadedStates);
+      setCities(loadedCities);
+    } catch (error) {
+      console.error('Erro ao carregar estados e cidades:', error);
+    }
+  };
 
   useEffect(() => {
     // Filtrar cidades baseado no estado selecionado
@@ -52,7 +61,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
     }
   }, [formData.state, states, cities]);
 
-  const validateForm = () => {
+  const validateForm = async () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name?.trim()) newErrors.name = 'Nome é obrigatório';
@@ -68,9 +77,13 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
       if (!isValid) {
         newErrors.document = formData.type === 'fisica' ? 'CPF inválido' : 'CNPJ inválido';
       } else {
-        // Verificar unicidade do documento
-        if (!storage.isDocumentUnique(formData.document, client?.id)) {
-          newErrors.document = formData.type === 'fisica' ? 'Este CPF já está cadastrado' : 'Este CNPJ já está cadastrado';
+        try {
+          const isUnique = await supabaseStorage.isDocumentUnique(formData.document, client?.id);
+          if (!isUnique) {
+            newErrors.document = formData.type === 'fisica' ? 'Este CPF já está cadastrado' : 'Este CNPJ já está cadastrado';
+          }
+        } catch (error) {
+          console.error('Erro ao verificar documento:', error);
         }
       }
     }
@@ -78,9 +91,13 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email inválido';
     } else if (formData.email) {
-      // Verificar unicidade do email
-      if (!storage.isEmailUnique(formData.email, client?.id)) {
-        newErrors.email = 'Este email já está cadastrado';
+      try {
+        const isUnique = await supabaseStorage.isEmailUnique(formData.email, client?.id);
+        if (!isUnique) {
+          newErrors.email = 'Este email já está cadastrado';
+        }
+      } catch (error) {
+        console.error('Erro ao verificar email:', error);
       }
     }
 
@@ -88,10 +105,10 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
 
     const clientData: Client = {
       id: client?.id || crypto.randomUUID(),

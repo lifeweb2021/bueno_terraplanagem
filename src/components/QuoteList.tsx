@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Quote, Order } from '../types';
-import { storage } from '../utils/storage';
+import { supabaseStorage } from '../utils/supabaseStorage';
 import { 
   FileText, 
   Plus, 
@@ -56,24 +56,34 @@ export const QuoteList: React.FC = () => {
     setFilteredQuotes(filtered);
   }, [quotes, searchTerm, statusFilter]);
 
-  const loadQuotes = () => {
-    const loadedQuotes = storage.getQuotes();
-    setQuotes(loadedQuotes);
+  const loadQuotes = async () => {
+    try {
+      const loadedQuotes = await supabaseStorage.getQuotes();
+      setQuotes(loadedQuotes);
+    } catch (error) {
+      console.error('Erro ao carregar orçamentos:', error);
+    }
   };
 
-  const handleSaveQuote = (quote: Quote) => {
+  const handleSaveQuote = async (quote: Quote) => {
     const isEditing = !!editingQuote;
-    if (editingQuote) {
-      storage.updateQuote(quote.id, quote);
-    } else {
-      storage.addQuote(quote);
+    try {
+      if (editingQuote) {
+        await supabaseStorage.updateQuote(quote.id, quote);
+      } else {
+        await supabaseStorage.addQuote(quote);
+        await supabaseStorage.incrementCounter('quote');
+      }
+      loadQuotes();
+      setShowForm(false);
+      setEditingQuote(undefined);
+      
+      setSuccessMessage(isEditing ? 'Orçamento atualizado com sucesso!' : 'Orçamento cadastrado com sucesso!');
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Erro ao salvar orçamento:', error);
+      alert('Erro ao salvar orçamento. Tente novamente.');
     }
-    loadQuotes();
-    setShowForm(false);
-    setEditingQuote(undefined);
-    
-    setSuccessMessage(isEditing ? 'Orçamento atualizado com sucesso!' : 'Orçamento cadastrado com sucesso!');
-    setShowSuccessModal(true);
   };
 
   const handleEditQuote = (quote: Quote) => {
@@ -81,10 +91,15 @@ export const QuoteList: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleDeleteQuote = (id: string) => {
+  const handleDeleteQuote = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este orçamento?')) {
-      storage.deleteQuote(id);
-      loadQuotes();
+      try {
+        await supabaseStorage.deleteQuote(id);
+        loadQuotes();
+      } catch (error) {
+        console.error('Erro ao excluir orçamento:', error);
+        alert('Erro ao excluir orçamento. Tente novamente.');
+      }
     }
   };
 
@@ -133,11 +148,16 @@ export const QuoteList: React.FC = () => {
   };
 
   const handleSendEmail = async (quote: Quote) => {
-    const success = await sendQuoteByEmail(quote);
-    if (success) {
-      const updatedQuote = { ...quote, status: 'sent' as const };
-      storage.updateQuote(quote.id, updatedQuote);
-      loadQuotes();
+    try {
+      const success = await sendQuoteByEmail(quote);
+      if (success) {
+        const updatedQuote = { ...quote, status: 'sent' as const };
+        await supabaseStorage.updateQuote(quote.id, updatedQuote);
+        loadQuotes();
+      }
+    } catch (error) {
+      console.error('Erro ao enviar email:', error);
+      alert('Erro ao enviar email. Tente novamente.');
     }
   };
 

@@ -98,30 +98,35 @@ export const CompanySettings: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
 
-    const settingsData: CompanySettingsType = {
-      id: settings.id || crypto.randomUUID(),
-      companyName: settings.companyName!,
-      cnpj: settings.cnpj!,
-      address: settings.address || '',
-      neighborhood: settings.neighborhood || '',
-      city: settings.city || '',
-      state: settings.state || '',
-      zipCode: settings.zipCode || '',
-      phone: settings.phone!,
-      whatsapp: settings.whatsapp || '',
-      email: settings.email!,
-      logo: settings.logo || '',
-      emailSettings: settings.emailSettings
-    };
+    try {
+      const settingsData: CompanySettingsType = {
+        id: settings.id || crypto.randomUUID(),
+        companyName: settings.companyName!,
+        cnpj: settings.cnpj!,
+        address: settings.address || '',
+        neighborhood: settings.neighborhood || '',
+        city: settings.city || '',
+        state: settings.state || '',
+        zipCode: settings.zipCode || '',
+        phone: settings.phone!,
+        whatsapp: settings.whatsapp || '',
+        email: settings.email!,
+        logo: settings.logo || '',
+        emailSettings: settings.emailSettings
+      };
 
-    storage.saveCompanySettings(settingsData);
-    setSettings(settingsData);
-    setShowSuccessModal(true);
+      await supabaseStorage.saveCompanySettings(settingsData);
+      setSettings(settingsData);
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Erro ao salvar configurações:', error);
+      alert('Erro ao salvar configurações. Tente novamente.');
+    }
   };
 
   const handleTestEmail = async () => {

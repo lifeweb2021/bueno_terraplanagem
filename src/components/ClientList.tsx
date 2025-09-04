@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
-import { storage } from '../utils/storage';
+import { supabaseStorage } from '../utils/supabaseStorage';
 import { User as UserIcon, Building2, Mail, Phone, Edit, Trash2, Plus, Search, Grid, List, CheckCircle } from 'lucide-react';
 import { ClientForm } from './ClientForm';
 
@@ -29,24 +29,33 @@ export const ClientList: React.FC = () => {
     setFilteredClients(filtered);
   }, [clients, searchTerm]);
 
-  const loadClients = () => {
-    const loadedClients = storage.getClients();
-    setClients(loadedClients);
+  const loadClients = async () => {
+    try {
+      const loadedClients = await supabaseStorage.getClients();
+      setClients(loadedClients);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+    }
   };
 
-  const handleSaveClient = (client: Client) => {
+  const handleSaveClient = async (client: Client) => {
     const isEditing = !!editingClient;
-    if (editingClient) {
-      storage.updateClient(client.id, client);
-    } else {
-      storage.addClient(client);
+    try {
+      if (editingClient) {
+        await supabaseStorage.updateClient(client.id, client);
+      } else {
+        await supabaseStorage.addClient(client);
+      }
+      loadClients();
+      setShowForm(false);
+      setEditingClient(undefined);
+      
+      setSuccessMessage(isEditing ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!');
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Erro ao salvar cliente:', error);
+      alert('Erro ao salvar cliente. Tente novamente.');
     }
-    loadClients();
-    setShowForm(false);
-    setEditingClient(undefined);
-    
-    setSuccessMessage(isEditing ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!');
-    setShowSuccessModal(true);
   };
 
   const handleEditClient = (client: Client) => {
@@ -62,14 +71,19 @@ export const ClientList: React.FC = () => {
     }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (clientToDelete) {
-      storage.deleteClient(clientToDelete.id);
-      loadClients();
-      setShowDeleteModal(false);
-      setClientToDelete(null);
-      setSuccessMessage('Cliente excluído com sucesso!');
-      setShowSuccessModal(true);
+      try {
+        await supabaseStorage.deleteClient(clientToDelete.id);
+        loadClients();
+        setShowDeleteModal(false);
+        setClientToDelete(null);
+        setSuccessMessage('Cliente excluído com sucesso!');
+        setShowSuccessModal(true);
+      } catch (error) {
+        console.error('Erro ao excluir cliente:', error);
+        alert('Erro ao excluir cliente. Tente novamente.');
+      }
     }
   };
 
