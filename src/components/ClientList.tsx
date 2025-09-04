@@ -3,6 +3,7 @@ import { Client } from '../types';
 import { supabaseStorage } from '../utils/supabaseStorage';
 import { User as UserIcon, Building2, Mail, Phone, Edit, Trash2, Plus, Search, Grid, List, CheckCircle } from 'lucide-react';
 import { ClientForm } from './ClientForm';
+import { dataManager } from '../utils/dataManager';
 
 export const ClientList: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -17,7 +18,25 @@ export const ClientList: React.FC = () => {
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
 
   useEffect(() => {
-    loadClients();
+    loadClientsReactive();
+  }, []);
+
+  const loadClientsReactive = async () => {
+    try {
+      await dataManager.loadData('clients');
+      setClients(dataManager.getData('clients') || []);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+    }
+  };
+
+  // Subscrever para mudanças nos clientes
+  useEffect(() => {
+    const unsubscribe = dataManager.subscribe('clients', () => {
+      setClients(dataManager.getData('clients') || []);
+    });
+
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -29,24 +48,16 @@ export const ClientList: React.FC = () => {
     setFilteredClients(filtered);
   }, [clients, searchTerm]);
 
-  const loadClients = async () => {
-    try {
-      const loadedClients = await supabaseStorage.getClients();
-      setClients(loadedClients);
-    } catch (error) {
-      console.error('Erro ao carregar clientes:', error);
-    }
-  };
-
   const handleSaveClient = async (client: Client) => {
     const isEditing = !!editingClient;
     try {
       if (editingClient) {
         await supabaseStorage.updateClient(client.id, client);
+        dataManager.updateLocalData('clients', 'update', client, client.id);
       } else {
         await supabaseStorage.addClient(client);
+        dataManager.updateLocalData('clients', 'add', client);
       }
-      loadClients();
       setShowForm(false);
       setEditingClient(undefined);
       
@@ -75,7 +86,7 @@ export const ClientList: React.FC = () => {
     if (clientToDelete) {
       try {
         await supabaseStorage.deleteClient(clientToDelete.id);
-        loadClients();
+        dataManager.updateLocalData('clients', 'delete', null, clientToDelete.id);
         setShowDeleteModal(false);
         setClientToDelete(null);
         setSuccessMessage('Cliente excluído com sucesso!');

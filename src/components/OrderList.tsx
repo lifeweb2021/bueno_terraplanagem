@@ -23,6 +23,7 @@ import { sendCompletionEmail } from '../utils/emailService';
 import { formatCurrency } from '../utils/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { dataManager } from '../utils/dataManager';
 
 const OrderList: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -36,7 +37,25 @@ const OrderList: React.FC = () => {
   const [orderToComplete, setOrderToComplete] = useState<Order | null>(null);
 
   useEffect(() => {
-    loadOrders();
+    loadOrdersReactive();
+  }, []);
+
+  const loadOrdersReactive = async () => {
+    try {
+      await dataManager.loadData('orders');
+      setOrders(dataManager.getData('orders') || []);
+    } catch (error) {
+      console.error('Erro ao carregar pedidos:', error);
+    }
+  };
+
+  // Subscrever para mudanças nos pedidos
+  useEffect(() => {
+    const unsubscribe = dataManager.subscribe('orders', () => {
+      setOrders(dataManager.getData('orders') || []);
+    });
+
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -56,15 +75,6 @@ const OrderList: React.FC = () => {
     setFilteredOrders(filtered);
   }, [orders, searchTerm, statusFilter]);
 
-  const loadOrders = async () => {
-    try {
-      const loadedOrders = await supabaseStorage.getOrders();
-      setOrders(loadedOrders);
-    } catch (error) {
-      console.error('Erro ao carregar pedidos:', error);
-    }
-  };
-
   const handleUpdateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
     try {
       const order = orders.find(o => o.id === orderId);
@@ -77,7 +87,7 @@ const OrderList: React.FC = () => {
       };
 
       await supabaseStorage.updateOrder(orderId, updatedOrder);
-      loadOrders();
+     dataManager.updateLocalData('orders', 'update', updatedOrder, orderId);
       
       if (newStatus === 'completed') {
         setSuccessMessage('Pedido concluído com sucesso!');

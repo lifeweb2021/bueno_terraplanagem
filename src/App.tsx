@@ -9,6 +9,7 @@ import { LoginForm } from './components/LoginForm';
 import { supabaseStorage } from './utils/supabaseStorage';
 import { supabaseAuth } from './utils/supabaseAuth';
 import { formatCurrency } from './utils/validators';
+import { dataManager } from './utils/dataManager';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,9 +17,11 @@ function App() {
   const [activeTab, setActiveTab] = useState<'clients' | 'quotes' | 'orders' | 'dashboard' | 'settings' | 'reports' | 'users'>('dashboard');
   const [companySettings, setCompanySettings] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [clients, setClients] = useState<any[]>([]);
-  const [quotes, setQuotes] = useState<any[]>([]);
-  const [orders, setOrders] = useState<any[]>([]);
+  
+  // Usar dados reativos do dataManager
+  const [clients, setClients] = useState<any[]>(dataManager.getData('clients') || []);
+  const [quotes, setQuotes] = useState<any[]>(dataManager.getData('quotes') || []);
+  const [orders, setOrders] = useState<any[]>(dataManager.getData('orders') || []);
 
   // Verificar sessão existente ao carregar
   React.useEffect(() => {
@@ -46,47 +49,67 @@ function App() {
     }
 
     // Load application data
-    await loadAllData();
+    await loadAllDataReactive();
   };
 
-  const loadAllData = async () => {
-    // Carregar configurações da empresa
+  const loadAllDataReactive = async () => {
     try {
-      const settings = await supabaseStorage.getCompanySettings();
-      setCompanySettings(settings);
-      
-      const loadedClients = await supabaseStorage.getClients();
-      setClients(loadedClients);
-      
-      const loadedQuotes = await supabaseStorage.getQuotes();
-      setQuotes(loadedQuotes);
-      
-      const loadedOrders = await supabaseStorage.getOrders();
-      setOrders(loadedOrders);
+      // Carregar todos os dados usando o dataManager
+      await Promise.all([
+        dataManager.loadData('companySettings'),
+        dataManager.loadData('clients'),
+        dataManager.loadData('quotes'),
+        dataManager.loadData('orders')
+      ]);
+
+      // Atualizar estados locais
+      setCompanySettings(dataManager.getData('companySettings'));
+      setClients(dataManager.getData('clients') || []);
+      setQuotes(dataManager.getData('quotes') || []);
+      setOrders(dataManager.getData('orders') || []);
     } catch (error) {
-      console.error('Erro ao carregar dados do Supabase:', error);
+      console.error('Erro ao carregar dados:', error);
     }
   };
+
+  // Subscrever para mudanças nos dados
+  React.useEffect(() => {
+    const unsubscribeClients = dataManager.subscribe('clients', () => {
+      setClients(dataManager.getData('clients') || []);
+    });
+
+    const unsubscribeQuotes = dataManager.subscribe('quotes', () => {
+      setQuotes(dataManager.getData('quotes') || []);
+    });
+
+    const unsubscribeOrders = dataManager.subscribe('orders', () => {
+      setOrders(dataManager.getData('orders') || []);
+    });
+
+    const unsubscribeSettings = dataManager.subscribe('companySettings', () => {
+      setCompanySettings(dataManager.getData('companySettings'));
+    });
+
+    return () => {
+      unsubscribeClients();
+      unsubscribeQuotes();
+      unsubscribeOrders();
+      unsubscribeSettings();
+    };
+  }, []);
 
   // Atualizar configurações quando mudar de aba
   React.useEffect(() => {
     if (activeTab === 'settings') {
-      loadCompanySettings();
+      dataManager.invalidateAndReload('companySettings');
     }
   }, [activeTab]);
-
-  const loadCompanySettings = async () => {
-    try {
-      const settings = await supabaseStorage.getCompanySettings();
-      setCompanySettings(settings);
-    } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
-    }
-  };
 
   const handleLogin = (session: any) => {
     setCurrentUser(session);
     setIsAuthenticated(true);
+    // Recarregar todos os dados após login
+    loadAllDataReactive();
   };
 
   const handleLogout = () => {
@@ -94,6 +117,8 @@ function App() {
     setCurrentUser(null);
     setIsAuthenticated(false);
     setActiveTab('dashboard');
+    // Limpar cache ao fazer logout
+    dataManager.invalidateAll();
   };
 
   // Se não estiver autenticado, mostrar tela de login

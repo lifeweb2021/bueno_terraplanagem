@@ -6,6 +6,7 @@ import { validateCNPJ, formatDocument, formatPhone, formatZipCode } from '../uti
 import { UserManagement } from './UserManagement';
 import { LocationManagement } from './LocationManagement';
 import { supabaseAuth } from '../utils/supabaseAuth';
+import { dataManager } from '../utils/dataManager';
 
 export const CompanySettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'company' | 'email' | 'users' | 'locations'>('company');
@@ -40,17 +41,34 @@ export const CompanySettings: React.FC = () => {
   const [isTestingEmail, setIsTestingEmail] = useState(false);
 
   useEffect(() => {
-    loadCompanySettings();
+    loadCompanySettingsReactive();
     loadCurrentUser();
     initializeLocations();
   }, []);
 
-  const loadCompanySettings = async () => {
-    const existingSettings = await supabaseStorage.getCompanySettings();
-    if (existingSettings) {
-      setSettings(existingSettings);
+  const loadCompanySettingsReactive = async () => {
+    try {
+      await dataManager.loadData('companySettings');
+      const existingSettings = dataManager.getData('companySettings');
+      if (existingSettings) {
+        setSettings(existingSettings);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
     }
   };
+
+  // Subscrever para mudanças nas configurações
+  useEffect(() => {
+    const unsubscribe = dataManager.subscribe('companySettings', () => {
+      const settings = dataManager.getData('companySettings');
+      if (settings) {
+        setSettings(settings);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   const initializeLocations = async () => {
     // Initialize default states if none exist
@@ -147,7 +165,7 @@ export const CompanySettings: React.FC = () => {
       };
 
       await supabaseStorage.saveCompanySettings(settingsData);
-      setSettings(settingsData);
+      dataManager.updateLocalData('companySettings', 'update', settingsData);
       setShowSuccessModal(true);
     } catch (error) {
       console.error('Erro ao salvar configurações:', error);

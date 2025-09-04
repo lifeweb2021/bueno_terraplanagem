@@ -19,6 +19,7 @@ import { QuoteForm } from './QuoteForm';
 import { generateQuotePDF } from '../utils/pdfGenerator';
 import { sendQuoteByEmail } from '../utils/emailService';
 import { formatCurrency } from '../utils/validators';
+import { dataManager } from '../utils/dataManager';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -36,7 +37,25 @@ export const QuoteList: React.FC = () => {
   const [quoteToApprove, setQuoteToApprove] = useState<Quote | null>(null);
 
   useEffect(() => {
-    loadQuotes();
+    loadQuotesReactive();
+  }, []);
+
+  const loadQuotesReactive = async () => {
+    try {
+      await dataManager.loadData('quotes');
+      setQuotes(dataManager.getData('quotes') || []);
+    } catch (error) {
+      console.error('Erro ao carregar orçamentos:', error);
+    }
+  };
+
+  // Subscrever para mudanças nos orçamentos
+  useEffect(() => {
+    const unsubscribe = dataManager.subscribe('quotes', () => {
+      setQuotes(dataManager.getData('quotes') || []);
+    });
+
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -56,25 +75,17 @@ export const QuoteList: React.FC = () => {
     setFilteredQuotes(filtered);
   }, [quotes, searchTerm, statusFilter]);
 
-  const loadQuotes = async () => {
-    try {
-      const loadedQuotes = await supabaseStorage.getQuotes();
-      setQuotes(loadedQuotes);
-    } catch (error) {
-      console.error('Erro ao carregar orçamentos:', error);
-    }
-  };
-
   const handleSaveQuote = async (quote: Quote) => {
     const isEditing = !!editingQuote;
     try {
       if (editingQuote) {
         await supabaseStorage.updateQuote(quote.id, quote);
+        dataManager.updateLocalData('quotes', 'update', quote, quote.id);
       } else {
         await supabaseStorage.addQuote(quote);
+        dataManager.updateLocalData('quotes', 'add', quote);
         await supabaseStorage.incrementCounter('quote');
       }
-      loadQuotes();
       setShowForm(false);
       setEditingQuote(undefined);
       
@@ -95,7 +106,7 @@ export const QuoteList: React.FC = () => {
     if (window.confirm('Tem certeza que deseja excluir este orçamento?')) {
       try {
         await supabaseStorage.deleteQuote(id);
-        loadQuotes();
+        dataManager.updateLocalData('quotes', 'delete', null, id);
       } catch (error) {
         console.error('Erro ao excluir orçamento:', error);
         alert('Erro ao excluir orçamento. Tente novamente.');
@@ -140,7 +151,10 @@ export const QuoteList: React.FC = () => {
 
     await supabaseStorage.addOrder(order);
     await supabaseStorage.incrementCounter('order');
-    loadQuotes();
+    
+    // Atualizar dados localmente
+    dataManager.updateLocalData('quotes', 'update', updatedQuote, quoteToApprove.id);
+    dataManager.updateLocalData('orders', 'add', order);
     
     setShowApproveModal(false);
     setQuoteToApprove(null);
@@ -154,7 +168,7 @@ export const QuoteList: React.FC = () => {
       if (success) {
         const updatedQuote = { ...quote, status: 'sent' as const };
         await supabaseStorage.updateQuote(quote.id, updatedQuote);
-        loadQuotes();
+        dataManager.updateLocalData('quotes', 'update', updatedQuote, quote.id);
       }
     } catch (error) {
       console.error('Erro ao enviar email:', error);
