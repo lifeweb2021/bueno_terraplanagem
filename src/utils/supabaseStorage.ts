@@ -624,43 +624,6 @@ export const supabaseStorage = {
     return newValue;
   },
 
-  // Initialize default admin user
-  async initializeDefaultAdminUser(): Promise<void> {
-    try {
-      // Check if admin user already exists
-      const { data: existingUser, error } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', 'admin@sistema.com')
-        .maybeSingle();
-      
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking for existing admin user:', error);
-        return;
-      }
-      
-      // If admin user doesn't exist, create it
-      if (!existingUser) {
-        const defaultAdmin = {
-          id: crypto.randomUUID(),
-          username: 'admin',
-          password: 'admin123',
-          name: 'Administrador',
-          email: 'admin@sistema.com',
-          role: 'admin',
-          isActive: true,
-          createdAt: new Date(),
-          lastLogin: undefined
-        };
-        
-        await this.addUser(defaultAdmin);
-        console.log('Default admin user created successfully');
-      }
-    } catch (error) {
-      console.error('Error initializing default admin user:', error);
-    }
-  },
-
   // Validation methods
   async isDocumentUnique(document: string, excludeId?: string): Promise<boolean> {
     let query = supabase

@@ -22,13 +22,34 @@ function App() {
 
   // Verificar sessão existente ao carregar
   React.useEffect(() => {
-    loadAllData();
+    checkAuthAndLoadData();
   }, []);
 
+  const checkAuthAndLoadData = async () => {
+    // Check for existing session
+    try {
+      const session = await supabaseAuth.getSession();
+      if (session?.user) {
+        const sessionData = {
+          userId: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.email.split('@')[0],
+          username: session.user.user_metadata?.username || session.user.email.split('@')[0],
+          loginTime: new Date(),
+          supabaseSession: session
+        };
+        setCurrentUser(sessionData);
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.error('Error checking auth session:', error);
+    }
+
+    // Load application data
+    await loadAllData();
+  };
+
   const loadAllData = async () => {
-    // Initialize default admin user if it doesn't exist
-    await supabaseStorage.initializeDefaultAdminUser();
-    
     // Carregar configurações da empresa
     try {
       const settings = await supabaseStorage.getCompanySettings();
