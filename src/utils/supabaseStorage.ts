@@ -38,7 +38,7 @@ export const supabaseStorage = {
         password: user.password,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: 'user',
         is_active: user.isActive,
         created_at: user.createdAt.toISOString(),
         last_login: user.lastLogin?.toISOString()
@@ -58,7 +58,7 @@ export const supabaseStorage = {
         password: user.password,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: 'user',
         is_active: user.isActive,
         last_login: user.lastLogin?.toISOString()
       })

@@ -46,7 +46,7 @@ export const UserManagement: React.FC = () => {
     password: '',
     confirmPassword: '',
     name: '',
-    role: 'user' as 'admin' | 'user',
+    role: 'user',
     isActive: true
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -137,9 +137,9 @@ export const UserManagement: React.FC = () => {
           id: crypto.randomUUID(),
           email: formData.email,
           username: formData.username,
-          password: formData.password, // Will be hashed by storage layer
+          password: formData.password, // Store password directly
           name: formData.name,
-          role: formData.role,
+          role: 'user',
           isActive: formData.isActive,
           createdAt: new Date()
         };
@@ -167,19 +167,13 @@ export const UserManagement: React.FC = () => {
       password: '',
       confirmPassword: '',
       name: user.name,
-      role: user.role,
+      role: 'user',
       isActive: user.isActive
     });
     setShowForm(true);
   };
 
   const handleDeleteUser = (user: User) => {
-    // Não permitir excluir o próprio usuário
-    if (user.email === 'admin@sistema.com') {
-      alert('Você não pode excluir seu próprio usuário');
-      return;
-    }
-    
     setUserToDelete(user);
     setShowDeleteModal(true);
   };
@@ -201,12 +195,6 @@ export const UserManagement: React.FC = () => {
   };
 
   const toggleUserStatus = (user: User) => {
-    if (user.email === 'admin@sistema.com') {
-      alert('Você não pode desativar seu próprio usuário');
-      return;
-    }
-
-    // Para simplificar, apenas mostrar mensagem
     alert('Funcionalidade de ativar/desativar será implementada em breve');
   };
 
@@ -271,14 +259,8 @@ export const UserManagement: React.FC = () => {
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
-                        user.role === 'admin' ? 'bg-red-100' : 'bg-blue-100'
-                      }`}>
-                        {user.role === 'admin' ? (
-                          <Shield className="text-red-600" size={20} />
-                        ) : (
-                          <User className="text-blue-600" size={20} />
-                        )}
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3 bg-blue-100">
+                        <UserIcon className="text-blue-600" size={20} />
                       </div>
                       <div>
                         <div className="text-sm font-medium text-gray-900">{user.name}</div>
@@ -290,12 +272,8 @@ export const UserManagement: React.FC = () => {
                     <span className="text-sm text-gray-900">{user.email}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      user.role === 'admin' 
-                        ? 'bg-red-100 text-red-800' 
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {user.role === 'admin' ? 'Administrador' : 'Usuário'}
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Usuário
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -491,25 +469,22 @@ export const UserManagement: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Perfil de Acesso
                 </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'user' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="user">Usuário</option>
-                  <option value="admin">Administrador</option>
-                </select>
-                <p className="mt-1 text-xs text-gray-500">Alteração de perfil será implementada em breve</p>
+                <input
+                  type="text"
+                  value="Usuário"
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500"
+                />
+                <p className="mt-1 text-xs text-gray-500">Sistema com nível único de acesso</p>
               </div>
 
               <div className="flex space-x-4 pt-4">
                 <button
                   type="submit"
-                  disabled={!!editingUser}
                   className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                 >
                   <Save size={20} className="mr-2" />
-                  {editingUser ? 'Edição em Breve' : 'Criar Usuário'}
+                  {editingUser ? 'Atualizar Usuário' : 'Criar Usuário'}
                 </button>
                 <button
                   type="button"

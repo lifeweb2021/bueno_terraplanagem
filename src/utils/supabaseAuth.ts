@@ -93,6 +93,8 @@ export const supabaseAuth = {
   // Authenticate user against database
   async authenticateUser(email: string, password: string) {
     try {
+      console.log('Attempting to authenticate:', email);
+      
       const { data: users, error } = await supabase
         .from('users')
         .select('*')
@@ -105,15 +107,18 @@ export const supabaseAuth = {
         throw new Error('Erro ao verificar credenciais');
       }
 
+      console.log('Users found:', users);
+
       if (!users || users.length === 0) {
         throw new Error('Email ou senha incorretos');
       }
 
       const user = users[0];
+      console.log('User data:', user);
       
-      // Simple password verification (in production, use proper hashing)
-      const isPasswordValid = user.password === password || 
-                             user.password === btoa(password + 'salt_key_2025');
+      // Simple password verification - direct comparison
+      const isPasswordValid = user.password === password;
+      console.log('Password check:', { provided: password, stored: user.password, valid: isPasswordValid });
 
       if (!isPasswordValid) {
         throw new Error('Email ou senha incorretos');
@@ -133,7 +138,7 @@ export const supabaseAuth = {
           user_metadata: {
             name: user.name,
             username: user.username,
-            role: user.role
+            role: 'user'
           }
         },
         session: {
@@ -143,7 +148,7 @@ export const supabaseAuth = {
             user_metadata: {
               name: user.name,
               username: user.username,
-              role: user.role
+              role: 'user'
             }
           }
         }
