@@ -119,19 +119,32 @@ export const UserManagement: React.FC = () => {
 
     try {
       if (editingUser) {
-        // Para edição, apenas atualizar metadados
+        // Update existing user
+        const updatedUser = {
+          ...editingUser,
+          name: formData.name,
+          role: formData.role,
+          isActive: formData.isActive,
+          // Only update password if provided
+          ...(formData.password && { password: formData.password })
+        };
+        
+        await supabaseStorage.updateUser(editingUser.id, updatedUser);
         setSuccessMessage('Usuário atualizado com sucesso!');
       } else {
-        // Criar novo usuário no Supabase Auth
-        await supabaseAuth.signUp(
-          formData.email,
-          formData.password,
-          {
-            name: formData.name,
-            username: formData.username,
-            role: formData.role
-          }
-        );
+        // Create new user directly in database
+        const newUser = {
+          id: crypto.randomUUID(),
+          email: formData.email,
+          username: formData.username,
+          password: formData.password, // Will be hashed by storage layer
+          name: formData.name,
+          role: formData.role,
+          isActive: formData.isActive,
+          createdAt: new Date()
+        };
+        
+        await supabaseStorage.addUser(newUser);
         setSuccessMessage('Usuário cadastrado com sucesso!');
       }
 
@@ -142,11 +155,7 @@ export const UserManagement: React.FC = () => {
       setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Erro ao salvar usuário:', error);
-      if (error.message?.includes('already registered')) {
-        alert('Este email já está cadastrado no sistema');
-      } else {
-        alert('Erro ao salvar usuário. Tente novamente.');
-      }
+      alert('Erro ao salvar usuário. Tente novamente.');
     }
   };
 

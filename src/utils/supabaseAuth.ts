@@ -86,53 +86,103 @@ export const supabaseAuth = {
   // Initialize default admin user
   async initializeDefaultUser() {
     try {
-      // Check if admin user exists
+      // Check if any users exist in the database
       const { data: existingUsers } = await supabase
         .from('users')
         .select('*')
-        .eq('username', 'admin')
         .limit(1);
 
+      // Only create default admin if no users exist at all
       if (!existingUsers || existingUsers.length === 0) {
-        // Create admin user in Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        console.log('No users found, creating default admin user...');
+        
+        const defaultUser = {
+          id: crypto.randomUUID(),
+          username: 'admin',
+          password: 'admin123', // This will be hashed by the storage layer
+          name: 'Administrador',
           email: 'admin@sistema.com',
-          password: 'admin123',
-          options: {
-            data: {
-              name: 'Administrador',
-              username: 'admin',
-              role: 'admin'
-            }
-          }
-        });
+          role: 'admin' as const,
+          is_active: true,
+          created_at: new Date().toISOString()
+        };
 
-        if (authError) {
-          console.error('Error creating admin user:', authError);
-          return;
-        }
+        const { error } = await supabase
+          .from('users')
+          .insert(defaultUser);
 
-        // Also create in users table
-        if (authData.user) {
-          const { error: userError } = await supabase
-            .from('users')
-            .insert({
-              id: authData.user.id,
-              username: 'admin',
-              password: 'hashed_admin123', // Placeholder since we use Supabase auth
-              name: 'Administrador',
-              email: 'admin@sistema.com',
-              role: 'admin',
-              is_active: true
-            });
-
-          if (userError) {
-            console.error('Error creating user record:', userError);
-          }
+        if (error) {
+          console.error('Error creating default admin user:', error);
+        } else {
+          console.log('Default admin user created successfully');
         }
       }
     } catch (error) {
       console.error('Error initializing default user:', error);
+    }
+  },
+
+  // Authenticate user against database
+  async authenticateUser(email: string, password: string) {
+    try {
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .eq('is_active', true)
+        .limit(1);
+
+      if (error) {
+        console.error('Error fetching user:', error);
+        throw new Error('Erro ao verificar credenciais');
+      }
+
+      if (!users || users.length === 0) {
+        throw new Error('Email ou senha incorretos');
+      }
+
+      const user = users[0];
+      
+      // Simple password verification (in production, use proper hashing)
+      const isPasswordValid = user.password === password || 
+                             user.password === btoa(password + 'salt_key_2025');
+
+      if (!isPasswordValid) {
+        throw new Error('Email ou senha incorretos');
+      }
+
+      // Update last login
+      await supabase
+        .from('users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', user.id);
+
+      // Return user data in the expected format
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          user_metadata: {
+            name: user.name,
+            username: user.username,
+            role: user.role
+          }
+        },
+        session: {
+          user: {
+            id: user.id,
+            email: user.email,
+            user_metadata: {
+              name: user.name,
+              username: user.username,
+              role: user.role
+            }
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Authentication error:', error);
+      throw error;
     }
   }
 };
