@@ -37,17 +37,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      // Simular delay de autenticação
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       const { user, session } = await supabaseAuth.signIn(formData.email, formData.password);
       
       if (user) {
         const sessionData = {
           userId: user.id,
           email: user.email,
-          name: user.user_metadata?.name || user.email,
-          role: user.user_metadata?.role || 'user',
+          name: user.user_metadata?.name || user.email.split('@')[0],
+          username: user.user_metadata?.username || user.email.split('@')[0],
           loginTime: new Date(),
           supabaseSession: session
         };
@@ -57,7 +54,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         setError('Email ou senha incorretos');
       }
     } catch (error) {
-      setError('Email ou senha incorretos');
+      console.error('Login error:', error);
+      setError(error instanceof Error ? error.message : 'Email ou senha incorretos');
     } finally {
       setIsLoading(false);
     }

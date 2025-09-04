@@ -7,132 +7,92 @@ export interface AuthSession {
 }
 
 export const supabaseAuth = {
-  // Sign up new user
-  async signUp(email: string, password: string, userData: { name: string; username: string; role?: string }) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: userData.name,
-          username: userData.username,
-          role: userData.role || 'user'
-        }
-      }
-    });
-
-    if (error) {
-      console.error('Error signing up:', error);
-      throw error;
-    }
-
-    return data;
-  },
-
-  // Sign in user
+  // Authenticate user against database
   async signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    try {
+      console.log('Attempting login for:', email);
+      
+      // Query user from database
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email.toLowerCase())
+        .eq('is_active', true)
+        .limit(1);
 
-    if (error) {
-      console.error('Error signing in:', error);
+      if (error) {
+        console.error('Database query error:', error);
+        throw new Error('Erro ao consultar usuário');
+      }
+
+      if (!users || users.length === 0) {
+        console.log('User not found');
+        throw new Error('Email ou senha incorretos');
+      }
+
+      const user = users[0];
+      console.log('User found:', { id: user.id, email: user.email, name: user.name });
+
+      // Simple password comparison (in production, use proper hashing)
+      if (user.password !== password) {
+        console.log('Password mismatch');
+        throw new Error('Email ou senha incorretos');
+      }
+
+      // Update last login
+      await supabase
+        .from('users')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', user.id);
+
+      console.log('Login successful');
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          user_metadata: {
+            name: user.name,
+            username: user.username
+          }
+        },
+        session: {
+          user: {
+            id: user.id,
+            email: user.email,
+            user_metadata: {
+              name: user.name,
+              username: user.username
+            }
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Login error:', error);
       throw error;
     }
-
-    return data;
   },
 
   // Sign out user
   async signOut() {
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
+    // Simple logout - just clear local session
+    console.log('User signed out');
   },
 
   // Get current session
   async getSession() {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    
-    if (error) {
-      console.error('Error getting session:', error);
-      return null;
-    }
-
-    return session;
+    // For now, return null as we're not using Supabase auth sessions
+    return null;
   },
 
   // Get current user
   async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
-    if (error) {
-      console.error('Error getting user:', error);
-      return null;
-    }
-
-    return user;
+    // For now, return null as we're not using Supabase auth
+    return null;
   },
 
   // Listen to auth changes
   onAuthStateChange(callback: (event: string, session: any) => void) {
-    return supabase.auth.onAuthStateChange(callback);
-  },
-
-  // Initialize default admin user
-  async initializeDefaultUser() {
-    try {
-      // Check if admin user exists
-      const { data: existingUsers } = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', 'admin')
-        .limit(1);
-
-      if (!existingUsers || existingUsers.length === 0) {
-        // Create admin user in Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: 'admin@sistema.com',
-          password: 'admin123',
-          options: {
-            data: {
-              name: 'Administrador',
-              username: 'admin',
-              role: 'admin'
-            }
-          }
-        });
-
-        if (authError) {
-          console.error('Error creating admin user:', authError);
-          return;
-        }
-
-        // Also create in users table
-        if (authData.user) {
-          const { error: userError } = await supabase
-            .from('users')
-            .insert({
-              id: authData.user.id,
-              username: 'admin',
-              password: 'hashed_admin123', // Placeholder since we use Supabase auth
-              name: 'Administrador',
-              email: 'admin@sistema.com',
-              role: 'admin',
-              is_active: true
-            });
-
-          if (userError) {
-            console.error('Error creating user record:', userError);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error initializing default user:', error);
-    }
+    // Not using Supabase auth state changes
+    return { data: { subscription: null }, error: null };
   }
 };

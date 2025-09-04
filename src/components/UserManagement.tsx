@@ -480,27 +480,24 @@ export const UserManagement: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Perfil de Acesso
+                  Perfil
                 </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'user' })}
+                <input
+                  type="text"
+                  value="Usuário"
+                  readOnly
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="user">Usuário</option>
-                  <option value="admin">Administrador</option>
-                </select>
-                <p className="mt-1 text-xs text-gray-500">Alteração de perfil será implementada em breve</p>
+                />
+                <p className="mt-1 text-xs text-gray-500">Todos os usuários têm acesso completo ao sistema</p>
               </div>
 
               <div className="flex space-x-4 pt-4">
                 <button
                   type="submit"
-                  disabled={!!editingUser}
                   className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                 >
                   <Save size={20} className="mr-2" />
-                  {editingUser ? 'Edição em Breve' : 'Criar Usuário'}
+                  {editingUser ? 'Atualizar Usuário' : 'Criar Usuário'}
                 </button>
                 <button
                   type="button"

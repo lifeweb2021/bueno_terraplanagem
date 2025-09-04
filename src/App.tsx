@@ -26,27 +26,6 @@ function App() {
   }, []);
 
   const loadAllData = async () => {
-    // Initialize default admin user
-    await supabaseAuth.initializeDefaultUser();
-    
-    // Check existing session
-    const session = await supabaseAuth.getSession();
-    if (session) {
-      const user = session.user;
-      if (user) {
-        const sessionData = {
-          userId: user.id,
-          email: user.email,
-          name: user.user_metadata?.name || user.email,
-          role: user.user_metadata?.role || 'user',
-          loginTime: new Date(),
-          supabaseSession: session
-        };
-        setCurrentUser(sessionData);
-        setIsAuthenticated(true);
-      }
-    }
-    
     // Carregar configurações da empresa
     try {
       const settings = await supabaseStorage.getCompanySettings();
