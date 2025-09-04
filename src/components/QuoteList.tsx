@@ -135,10 +135,11 @@ export const QuoteList: React.FC = () => {
     const updatedQuote = { ...quoteToApprove, status: 'approved' as const };
     await supabaseStorage.updateQuote(quoteToApprove.id, updatedQuote);
 
-    // Criar pedido
-    const counters = await supabaseStorage.getCounters();
-    const orderNumber = `PED${String(counters.order).padStart(4, '0')}`;
+    // Incrementar contador e obter novo número
+    const newOrderCounter = await supabaseStorage.incrementCounter('order');
+    const orderNumber = `PED${String(newOrderCounter).padStart(4, '0')}`;
     
+    // Criar pedido
     const order: Order = {
       id: crypto.randomUUID(),
       quoteId: quoteToApprove.id,
@@ -154,7 +155,6 @@ export const QuoteList: React.FC = () => {
     };
 
     await supabaseStorage.addOrder(order);
-    await supabaseStorage.incrementCounter('order');
     
     // Atualizar dados localmente
     dataManager.updateLocalData('quotes', 'update', updatedQuote, quoteToApprove.id);
