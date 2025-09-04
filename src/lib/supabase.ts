@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+/*import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -7,7 +7,42 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);*/
+
+// src/utils/supabaseStorage.ts
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+
+// Pegando variáveis de ambiente
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+// Validação para evitar client sem API Key
+if (!supabaseUrl) {
+  throw new Error("❌ SUPABASE_URL não encontrada. Verifique suas variáveis de ambiente.");
+}
+if (!supabaseAnonKey) {
+  throw new Error("❌ SUPABASE_ANON_KEY não encontrada. Verifique suas variáveis de ambiente.");
+}
+
+// Criando client do Supabase
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+
+// Exemplo de função para buscar company_settings
+export async function getCompanySettings() {
+  const { data, error } = await supabase
+    .from("company_settings")
+    .select("*")
+    .limit(1)
+    .single();
+
+  if (error) {
+    console.error("Error fetching company settings:", error);
+    throw error;
+  }
+
+  return data;
+}
+
 
 // Database types
 export interface Database {
