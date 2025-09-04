@@ -66,7 +66,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         {/* Logo e Título */}
         <div className="text-center mb-8">
-          {companySettings.logo ? (
+          {companySettings?.logo ? (
             <div className="mx-auto w-40 h-32 mb-4 flex items-center justify-center">
               
               
