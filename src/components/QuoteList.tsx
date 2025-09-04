@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Quote, Order } from '../types';
 import { supabaseStorage } from '../utils/supabaseStorage';
-import { 
   FileText, 
   Plus, 
   Search, 
@@ -113,15 +112,15 @@ export const QuoteList: React.FC = () => {
     setShowApproveModal(true);
   };
 
-  const confirmApproval = () => {
+  const confirmApproval = async () => {
     if (!quoteToApprove) return;
 
     // Atualizar status do orçamento
     const updatedQuote = { ...quoteToApprove, status: 'approved' as const };
-    storage.updateQuote(quoteToApprove.id, updatedQuote);
+    await supabaseStorage.updateQuote(quoteToApprove.id, updatedQuote);
 
     // Criar pedido
-    const counters = storage.getCounters();
+    const counters = await supabaseStorage.getCounters();
     const orderNumber = `PED${String(counters.order).padStart(4, '0')}`;
     
     const order: Order = {
@@ -134,11 +133,12 @@ export const QuoteList: React.FC = () => {
       products: quoteToApprove.products,
       total: quoteToApprove.total,
       status: 'pending',
-      createdAt: new Date()
+      createdAt: new Date(),
+      isFromQuote: true
     };
 
-    storage.addOrder(order);
-    storage.incrementCounter('order');
+    await supabaseStorage.addOrder(order);
+    await supabaseStorage.incrementCounter('order');
     loadQuotes();
     
     setShowApproveModal(false);
