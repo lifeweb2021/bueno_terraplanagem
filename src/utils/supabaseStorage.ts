@@ -88,7 +88,8 @@ export const supabaseStorage = {
       const { data, error } = await supabase
         .from('company_settings')
         .select('*')
-        .single();
+        .maybeSingle();
+       // .single();
       
       if (error) {
         throw error;
