@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CompanySettings as CompanySettingsType } from '../types';
-import { storage } from '../utils/storage';
+import { supabaseStorage } from '../utils/supabaseStorage';
 import { Building2, Save, Upload, X, CheckCircle, Mail, Settings, Users, MapPin, UserCog } from 'lucide-react';
 import { validateCNPJ, formatDocument, formatPhone, formatZipCode } from '../utils/validators';
 import { UserManagement } from './UserManagement';
@@ -40,17 +40,39 @@ export const CompanySettings: React.FC = () => {
   const [isTestingEmail, setIsTestingEmail] = useState(false);
 
   useEffect(() => {
-    const existingSettings = storage.getCompanySettings();
+    loadCompanySettings();
+    loadCurrentUser();
+    initializeLocations();
+  }, []);
+
+  const loadCompanySettings = async () => {
+    const existingSettings = await supabaseStorage.getCompanySettings();
     if (existingSettings) {
       setSettings(existingSettings);
     }
-    
-    // Check current user
-    loadCurrentUser();
-    
-    // Inicializar localizações padrão
-    storage.initializeDefaultLocations();
-  }, []);
+  };
+
+  const initializeLocations = async () => {
+    // Initialize default states if none exist
+    const states = await supabaseStorage.getStates();
+    if (states.length === 0) {
+      const defaultStates = [
+        { id: crypto.randomUUID(), name: 'São Paulo', code: 'SP', createdAt: new Date() },
+        { id: crypto.randomUUID(), name: 'Rio de Janeiro', code: 'RJ', createdAt: new Date() },
+        { id: crypto.randomUUID(), name: 'Minas Gerais', code: 'MG', createdAt: new Date() },
+        { id: crypto.randomUUID(), name: 'Paraná', code: 'PR', createdAt: new Date() },
+        { id: crypto.randomUUID(), name: 'Rio Grande do Sul', code: 'RS', createdAt: new Date() }
+      ];
+      
+      for (const state of defaultStates) {
+        try {
+          await supabaseStorage.addState(state);
+        } catch (error) {
+          console.error('Error adding default state:', error);
+        }
+      }
+    }
+  };
 
   const loadCurrentUser = async () => {
     try {
@@ -77,19 +99,11 @@ export const CompanySettings: React.FC = () => {
       if (settings.cnpj && !validateCNPJ(settings.cnpj)) {
         newErrors.cnpj = 'CNPJ inválido';
       } else if (settings.cnpj) {
-        // Verificar unicidade do CNPJ
-        if (!storage.isCompanyCNPJUnique(settings.cnpj, settings.id)) {
-          newErrors.cnpj = 'Este CNPJ já está cadastrado';
-        }
+        // Note: CNPJ uniqueness is handled by database constraints
       }
 
       if (settings.email && !/\S+@\S+\.\S+/.test(settings.email)) {
         newErrors.email = 'Email inválido';
-      } else if (settings.email) {
-        // Verificar unicidade do email
-        if (!storage.isCompanyEmailUnique(settings.email, settings.id)) {
-          newErrors.email = 'Este email já está cadastrado';
-        }
       }
     }
 
