@@ -1,13 +1,13 @@
 import { Quote } from '../types';
 import { Order } from '../types';
-import { storage } from './storage';
+import { supabaseStorage } from './supabaseStorage';
 import { generateQuotePDFBlob } from './pdfGenerator';
 import { generateReceiptPDFBlob } from './pdfGenerator';
 import { formatCurrency } from './validators';
 
 export const sendQuoteByEmail = async (quote: Quote): Promise<boolean> => {
   try {
-    const companySettings = storage.getCompanySettings();
+    const companySettings = await supabaseStorage.getCompanySettings();
     
     if (!companySettings) {
       alert('Configure os dados da empresa antes de enviar emails');
@@ -178,8 +178,8 @@ const showEmailSuccessModal = (clientEmail: string, emailSettings: any) => {
 
 export const sendCompletionEmail = async (order: Order): Promise<boolean> => {
   try {
-    const companySettings = storage.getCompanySettings();
-    const quotes = storage.getQuotes();
+    const companySettings = await supabaseStorage.getCompanySettings();
+    const quotes = await supabaseStorage.getQuotes();
     const originalQuote = quotes.find(q => q.id === order.quoteId);
     
     if (!companySettings) {
