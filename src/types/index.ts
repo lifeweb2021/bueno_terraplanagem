@@ -60,15 +60,6 @@ export interface CompanySettings {
   whatsapp: string;
   email: string;
   logo?: string; // base64 ou URL
-  emailSettings?: {
-    smtpHost: string;
-    smtpPort: number;
-    smtpUser: string;
-    smtpPassword: string;
-    fromName: string;
-    fromEmail: string;
-    useSSL: boolean;
-  };
 }
 
 export interface Order {

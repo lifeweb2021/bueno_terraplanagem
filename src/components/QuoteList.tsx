@@ -8,7 +8,6 @@ import {
   Edit, 
   Trash2, 
   Download, 
-  Mail, 
   CheckCircle,
   Clock,
   XCircle,
@@ -17,7 +16,6 @@ import {
 } from 'lucide-react';
 import { QuoteForm } from './QuoteForm';
 import { generateQuotePDF } from '../utils/pdfGenerator';
-import { sendQuoteByEmail } from '../utils/emailService';
 import { formatCurrency } from '../utils/validators';
 import { dataManager } from '../utils/dataManager';
 import { format } from 'date-fns';
@@ -166,19 +164,6 @@ export const QuoteList: React.FC = () => {
     setShowSuccessModal(true);
   };
 
-  const handleSendEmail = async (quote: Quote) => {
-    try {
-      const success = await sendQuoteByEmail(quote);
-      if (success) {
-        const updatedQuote = { ...quote, status: 'sent' as const };
-        await supabaseStorage.updateQuote(quote.id, updatedQuote);
-        dataManager.updateLocalData('quotes', 'update', updatedQuote, quote.id);
-      }
-    } catch (error) {
-      console.error('Erro ao enviar email:', error);
-      alert('Erro ao enviar email. Tente novamente.');
-    }
-  };
 
   const getStatusColor = (status: Quote['status']) => {
     switch (status) {
@@ -203,7 +188,7 @@ export const QuoteList: React.FC = () => {
   const getStatusIcon = (status: Quote['status']) => {
     switch (status) {
       case 'draft': return <Edit size={16} />;
-      case 'sent': return <Mail size={16} />;
+      case 'sent': return <FileText size={16} />;
       case 'approved': return <CheckCircle size={16} />;
       case 'rejected': return <XCircle size={16} />;
       default: return <Clock size={16} />;
@@ -270,15 +255,6 @@ export const QuoteList: React.FC = () => {
               PDF
             </button>
 
-            {quote.status !== 'approved' && (
-              <button
-                onClick={() => handleSendEmail(quote)}
-                className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center text-sm"
-              >
-                <Mail size={16} className="mr-1" />
-                Enviar
-              </button>
-            )}
 
             {(quote.status === 'draft' || quote.status === 'sent') && (
               <button
@@ -385,15 +361,6 @@ export const QuoteList: React.FC = () => {
                     >
                       <Download size={16} />
                     </button>
-                    {quote.status !== 'approved' && (
-                      <button
-                        onClick={() => handleSendEmail(quote)}
-                        className="text-purple-600 hover:text-purple-900"
-                        title="Enviar por Email"
-                      >
-                        <Mail size={16} />
-                      </button>
-                    )}
                     {(quote.status === 'draft' || quote.status === 'sent') && (
                       <button
                         onClick={() => handleApproveQuote(quote)}

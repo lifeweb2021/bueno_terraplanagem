@@ -112,8 +112,7 @@ export const supabaseStorage = {
         phone: data.phone,
         whatsapp: data.whatsapp,
         email: data.email,
-        logo: data.logo,
-        emailSettings: data.email_settings
+        logo: data.logo
       };
     } catch (error: any) {
       if (error.code === 'PGRST116') {
@@ -140,7 +139,6 @@ export const supabaseStorage = {
         whatsapp: settings.whatsapp,
         email: settings.email,
         logo: settings.logo,
-        email_settings: settings.emailSettings,
         updated_at: new Date().toISOString()
       });
     

@@ -8,7 +8,6 @@ import {
   Edit, 
   Trash2, 
   Download, 
-  Mail, 
   CheckCircle,
   Clock,
   XCircle,
@@ -21,7 +20,6 @@ import {
   X
 } from 'lucide-react';
 import { generateReceiptPDF } from '../utils/pdfGenerator';
-import { sendCompletionEmail } from '../utils/emailService';
 import { formatCurrency } from '../utils/validators';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -99,13 +97,6 @@ const OrderList: React.FC = () => {
       if (newStatus === 'completed') {
         setSuccessMessage('Pedido concluído com sucesso!');
         setShowSuccessModal(true);
-        
-        // Enviar email de conclusão
-        try {
-          await sendCompletionEmail(updatedOrder);
-        } catch (emailError) {
-          console.error('Erro ao enviar email de conclusão:', emailError);
-        }
       } else {
         setSuccessMessage(`Status do pedido atualizado para ${getStatusLabel(newStatus)}!`);
         setShowSuccessModal(true);
