@@ -127,8 +127,9 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
     }
 
     const client = clients.find(c => c.id === formData.clientId)!;
-    const counters = await supabaseStorage.getCounters();
-    const quoteNumber = quote?.number || `ORÇ${String(counters.quote).padStart(4, '0')}`;
+    
+    // Generate quote number - will be handled by parent component
+    const quoteNumber = quote?.number || `ORÇ${String(Date.now()).slice(-4)}`;
 
     const quoteData: Quote = {
       id: quote?.id || crypto.randomUUID(),
