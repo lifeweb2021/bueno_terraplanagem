@@ -84,35 +84,38 @@ export const supabaseStorage = {
 
   // Company Settings
   async getCompanySettings(): Promise<CompanySettings | null> {
-    const { data, error } = await supabase
-      .from('company_settings')
-      .select('*')
-      .single();
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('company_settings')
+        .select('*')
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return {
+        id: data.id,
+        companyName: data.company_name,
+        cnpj: data.cnpj,
+        address: data.address,
+        neighborhood: data.neighborhood,
+        city: data.city,
+        state: data.state,
+        zipCode: data.zip_code,
+        phone: data.phone,
+        whatsapp: data.whatsapp,
+        email: data.email,
+        logo: data.logo,
+        emailSettings: data.email_settings
+      };
+    } catch (error: any) {
       if (error.code === 'PGRST116') {
-        // No data found
         return null;
       }
       console.error('Error fetching company settings:', error);
       return null;
     }
-    
-    return {
-      id: data.id,
-      companyName: data.company_name,
-      cnpj: data.cnpj,
-      address: data.address,
-      neighborhood: data.neighborhood,
-      city: data.city,
-      state: data.state,
-      zipCode: data.zip_code,
-      phone: data.phone,
-      whatsapp: data.whatsapp,
-      email: data.email,
-      logo: data.logo,
-      emailSettings: data.email_settings
-    };
   },
 
   async saveCompanySettings(settings: CompanySettings): Promise<void> {
@@ -658,24 +661,27 @@ export const supabaseStorage = {
 
   // Counters
   async getCounters(): Promise<Counters> {
-    const { data, error } = await supabase
-      .from('counters')
-      .select('*')
-      .single();
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('counters')
+        .select('*')
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return {
+        quote: data.quote_counter,
+        order: data.order_counter
+      };
+    } catch (error: any) {
       if (error.code === 'PGRST116') {
-        // No data found, return default
         return { quote: 1, order: 1 };
       }
       console.error('Error fetching counters:', error);
       return { quote: 1, order: 1 };
     }
-    
-    return {
-      quote: data.quote_counter,
-      order: data.order_counter
-    };
   },
 
   async incrementCounter(type: 'quote' | 'order'): Promise<number> {
