@@ -577,15 +577,20 @@ export const supabaseStorage = {
 
   // Counters
   async getCounters(): Promise<Counters> {
+    const COUNTER_ID = 'main_counter';
     try {
       const { data, error } = await supabase
         .from('counters')
         .select('*')
+        .eq('id', COUNTER_ID)
         .maybeSingle();
-        //.single();
       
       if (error) {
         throw error;
+      }
+      
+      if (!data) {
+        return { quote: 0, order: 0 };
       }
       
       return {
@@ -594,14 +599,15 @@ export const supabaseStorage = {
       };
     } catch (error: any) {
       if (error.code === 'PGRST116') {
-        return { quote: 1, order: 1 };
+        return { quote: 0, order: 0 };
       }
       console.error('Error fetching counters:', error);
-      return { quote: 1, order: 1 };
+      return { quote: 0, order: 0 };
     }
   },
 
   async incrementCounter(type: 'quote' | 'order'): Promise<number> {
+    const COUNTER_ID = 'main_counter';
     const counters = await this.getCounters();
     const newValue = counters[type] + 1;
     
@@ -610,8 +616,11 @@ export const supabaseStorage = {
     const { error } = await supabase
       .from('counters')
       .upsert({
+        id: COUNTER_ID,
         [updateField]: newValue,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'id'
       });
     
     if (error) {
