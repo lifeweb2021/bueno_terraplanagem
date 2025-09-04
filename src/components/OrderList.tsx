@@ -17,6 +17,8 @@ import {
   Play,
   Pause,
   Square
+  Eye,
+  X
 } from 'lucide-react';
 import { generateReceiptPDF } from '../utils/pdfGenerator';
 import { sendCompletionEmail } from '../utils/emailService';
@@ -35,6 +37,8 @@ const OrderList: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [orderToComplete, setOrderToComplete] = useState<Order | null>(null);
+  const [showItemsModal, setShowItemsModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     loadOrdersReactive();
@@ -125,6 +129,10 @@ const OrderList: React.FC = () => {
     }
   };
 
+  const handleViewItems = (order: Order) => {
+    setSelectedOrder(order);
+    setShowItemsModal(true);
+  };
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
@@ -238,6 +246,13 @@ const OrderList: React.FC = () => {
               </button>
             )}
 
+            <button
+              onClick={() => handleViewItems(order)}
+              className="bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center text-sm"
+            >
+              <Eye size={16} className="mr-1" />
+              Ver Itens
+            </button>
             {order.status !== 'cancelled' && order.status !== 'completed' && (
               <button
                 onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')}
@@ -336,6 +351,13 @@ const OrderList: React.FC = () => {
                         <Download size={16} />
                       </button>
                     )}
+                    <button
+                      onClick={() => handleViewItems(order)}
+                      className="text-gray-600 hover:text-gray-900"
+                      title="Ver Itens"
+                    >
+                      <Eye size={16} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -485,6 +507,177 @@ const OrderList: React.FC = () => {
                   Concluir
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Itens do Pedido */}
+      {showItemsModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">
+                Itens do Pedido {selectedOrder.number}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowItemsModal(false);
+                  setSelectedOrder(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Informações do Cliente */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-blue-900 mb-2">Informações do Cliente</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+                <div>
+                  <strong>Nome:</strong> {selectedOrder.client.name}
+                </div>
+                <div>
+                  <strong>Email:</strong> {selectedOrder.client.email}
+                </div>
+                <div>
+                  <strong>Telefone:</strong> {selectedOrder.client.phone}
+                </div>
+                <div>
+                  <strong>Documento:</strong> {selectedOrder.client.document}
+                </div>
+              </div>
+            </div>
+
+            {/* Serviços */}
+            {selectedOrder.services.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <ShoppingCart className="mr-2 text-blue-600" size={20} />
+                  Serviços ({selectedOrder.services.length})
+                </h4>
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Descrição
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Horas
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Valor/Hora
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {selectedOrder.services.map((service, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{service.description}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{service.hours}h</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{formatCurrency(service.hourlyRate)}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-green-600">{formatCurrency(service.total)}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Produtos */}
+            {selectedOrder.products.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <ShoppingCart className="mr-2 text-green-600" size={20} />
+                  Produtos ({selectedOrder.products.length})
+                </h4>
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Descrição
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Quantidade
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Valor Unitário
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {selectedOrder.products.map((product, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{product.description}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{product.quantity}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900">{formatCurrency(product.unitPrice)}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-green-600">{formatCurrency(product.total)}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Resumo do Pedido */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+              <div className="flex justify-between items-center">
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <p className="text-sm text-gray-600">Data do Pedido:</p>
+                    <p className="font-medium">{format(selectedOrder.createdAt, 'dd/MM/yyyy', { locale: ptBR })}</p>
+                  </div>
+                  {selectedOrder.completedAt && (
+                    <div>
+                      <p className="text-sm text-gray-600">Data de Conclusão:</p>
+                      <p className="font-medium">{format(selectedOrder.completedAt, 'dd/MM/yyyy', { locale: ptBR })}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">Valor Total:</p>
+                  <p className="text-2xl font-bold text-green-600">{formatCurrency(selectedOrder.total)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => {
+                  setShowItemsModal(false);
+                  setSelectedOrder(null);
+                }}
+                className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>
