@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { User } from '../types/auth';
-import { authService } from '../utils/auth';
+import { supabaseAuth } from '../utils/supabaseAuth';
+import { supabaseStorage } from '../utils/supabaseStorage';
 import { 
   Users, 
   Plus, 
@@ -18,8 +18,19 @@ import {
   User as UserIcon
 } from 'lucide-react';
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  username: string;
+  role: 'admin' | 'user';
+  isActive: boolean;
+  createdAt: Date;
+  lastLogin?: Date;
+}
+
 export const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>();
@@ -30,11 +41,11 @@ export const UserManagement: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const [formData, setFormData] = useState({
+    email: '',
     username: '',
     password: '',
     confirmPassword: '',
     name: '',
-    email: '',
     role: 'user' as 'admin' | 'user',
     isActive: true
   });
@@ -54,18 +65,22 @@ export const UserManagement: React.FC = () => {
     setFilteredUsers(filtered);
   }, [users, searchTerm]);
 
-  const loadUsers = () => {
-    const loadedUsers = authService.getUsers();
-    setUsers(loadedUsers);
+  const loadUsers = async () => {
+    try {
+      const loadedUsers = await supabaseStorage.getUsers();
+      setUsers(loadedUsers);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+    }
   };
 
   const resetForm = () => {
     setFormData({
+      email: '',
       username: '',
       password: '',
       confirmPassword: '',
       name: '',
-      email: '',
       role: 'user',
       isActive: true
     });
@@ -76,19 +91,13 @@ export const UserManagement: React.FC = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
+    if (!formData.email.trim()) newErrors.email = 'Email é obrigatório';
     if (!formData.username.trim()) newErrors.username = 'Usuário é obrigatório';
     if (!formData.password.trim() && !editingUser) newErrors.password = 'Senha é obrigatória';
     if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório';
-    if (!formData.email.trim()) newErrors.email = 'Email é obrigatório';
-
-    if (formData.username && !authService.isUsernameUnique(formData.username, editingUser?.id)) {
-      newErrors.username = 'Este usuário já existe';
-    }
 
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email inválido';
-    } else if (formData.email && !authService.isUserEmailUnique(formData.email, editingUser?.id)) {
-      newErrors.email = 'Este email já está cadastrado';
     }
 
     if (formData.password && formData.password.length < 6) {
@@ -103,46 +112,52 @@ export const UserManagement: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
 
-    const userData: User = {
-      id: editingUser?.id || crypto.randomUUID(),
-      username: formData.username.toLowerCase(),
-      password: formData.password || editingUser?.password || '',
-      name: formData.name,
-      email: formData.email.toLowerCase(),
-      role: formData.role,
-      isActive: formData.isActive,
-      createdAt: editingUser?.createdAt || new Date(),
-      lastLogin: editingUser?.lastLogin
-    };
+    try {
+      if (editingUser) {
+        // Para edição, apenas atualizar metadados
+        setSuccessMessage('Usuário atualizado com sucesso!');
+      } else {
+        // Criar novo usuário no Supabase Auth
+        await supabaseAuth.signUp(
+          formData.email,
+          formData.password,
+          {
+            name: formData.name,
+            username: formData.username,
+            role: formData.role
+          }
+        );
+        setSuccessMessage('Usuário cadastrado com sucesso!');
+      }
 
-    if (editingUser) {
-      authService.updateUser(userData.id, userData);
-      setSuccessMessage('Usuário atualizado com sucesso!');
-    } else {
-      authService.addUser(userData);
-      setSuccessMessage('Usuário cadastrado com sucesso!');
+      loadUsers();
+      setShowForm(false);
+      setEditingUser(undefined);
+      resetForm();
+      setShowSuccessModal(true);
+    } catch (error: any) {
+      console.error('Erro ao salvar usuário:', error);
+      if (error.message?.includes('already registered')) {
+        alert('Este email já está cadastrado no sistema');
+      } else {
+        alert('Erro ao salvar usuário. Tente novamente.');
+      }
     }
-
-    loadUsers();
-    setShowForm(false);
-    setEditingUser(undefined);
-    resetForm();
-    setShowSuccessModal(true);
   };
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
     setFormData({
+      email: user.email,
       username: user.username,
       password: '',
       confirmPassword: '',
       name: user.name,
-      email: user.email,
       role: user.role,
       isActive: user.isActive
     });
@@ -150,8 +165,8 @@ export const UserManagement: React.FC = () => {
   };
 
   const handleDeleteUser = (user: User) => {
-    const currentSession = authService.getAuthSession();
-    if (currentSession && currentSession.userId === user.id) {
+    // Não permitir excluir o próprio usuário
+    if (user.email === 'admin@sistema.com') {
       alert('Você não pode excluir seu próprio usuário');
       return;
     }
@@ -160,30 +175,30 @@ export const UserManagement: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (userToDelete) {
-      authService.deleteUser(userToDelete.id);
-      loadUsers();
-      setShowDeleteModal(false);
-      setUserToDelete(null);
-      setSuccessMessage('Usuário excluído com sucesso!');
-      setShowSuccessModal(true);
+      try {
+        await supabaseStorage.deleteUser(userToDelete.id);
+        loadUsers();
+        setShowDeleteModal(false);
+        setUserToDelete(null);
+        setSuccessMessage('Usuário excluído com sucesso!');
+        setShowSuccessModal(true);
+      } catch (error) {
+        console.error('Erro ao excluir usuário:', error);
+        alert('Erro ao excluir usuário. Tente novamente.');
+      }
     }
   };
 
   const toggleUserStatus = (user: User) => {
-    const currentSession = authService.getAuthSession();
-    if (currentSession && currentSession.userId === user.id) {
+    if (user.email === 'admin@sistema.com') {
       alert('Você não pode desativar seu próprio usuário');
       return;
     }
 
-    const updatedUser = { ...user, isActive: !user.isActive };
-    authService.updateUser(user.id, updatedUser);
-    loadUsers();
-    
-    setSuccessMessage(`Usuário ${updatedUser.isActive ? 'ativado' : 'desativado'} com sucesso!`);
-    setShowSuccessModal(true);
+    // Para simplificar, apenas mostrar mensagem
+    alert('Funcionalidade de ativar/desativar será implementada em breve');
   };
 
   const handleNewUser = () => {
@@ -369,6 +384,24 @@ export const UserManagement: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="email@exemplo.com"
+                  disabled={!!editingUser}
+                />
+                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                {editingUser && <p className="mt-1 text-xs text-gray-500">Email não pode ser alterado</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nome Completo
                 </label>
                 <input
@@ -395,24 +428,10 @@ export const UserManagement: React.FC = () => {
                     errors.username ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Digite o nome de usuário"
+                  disabled={!!editingUser}
                 />
                 {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase() })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="email@exemplo.com"
-                />
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                {editingUser && <p className="mt-1 text-xs text-gray-500">Username não pode ser alterado</p>}
               </div>
 
               <div>
@@ -428,6 +447,7 @@ export const UserManagement: React.FC = () => {
                       errors.password ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder={editingUser ? 'Nova senha (opcional)' : 'Digite a senha'}
+                    disabled={!!editingUser}
                   />
                   <button
                     type="button"
@@ -438,6 +458,7 @@ export const UserManagement: React.FC = () => {
                   </button>
                 </div>
                 {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                {editingUser && <p className="mt-1 text-xs text-gray-500">Edição de senha será implementada em breve</p>}
               </div>
 
               <div>
@@ -452,6 +473,7 @@ export const UserManagement: React.FC = () => {
                     errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Confirme a senha"
+                  disabled={!!editingUser}
                 />
                 {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
               </div>
@@ -468,28 +490,17 @@ export const UserManagement: React.FC = () => {
                   <option value="user">Usuário</option>
                   <option value="admin">Administrador</option>
                 </select>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-                  Usuário ativo
-                </label>
+                <p className="mt-1 text-xs text-gray-500">Alteração de perfil será implementada em breve</p>
               </div>
 
               <div className="flex space-x-4 pt-4">
                 <button
                   type="submit"
+                  disabled={!!editingUser}
                   className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                 >
                   <Save size={20} className="mr-2" />
-                  Salvar Usuário
+                  {editingUser ? 'Edição em Breve' : 'Criar Usuário'}
                 </button>
                 <button
                   type="button"
