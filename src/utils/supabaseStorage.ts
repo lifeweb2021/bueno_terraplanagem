@@ -575,59 +575,7 @@ export const supabaseStorage = {
     }
   },
 
-  // Clients
-  async getClients(): Promise<Client[]> {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching clients:', error);
-      return [];
-    }
-    
-    return data.map(client => ({
-      id: client.id,
-      type: client.type as 'fisica' | 'juridica',
-      name: client.name,
-      document: client.document,
-      email: client.email,
-      phone: client.phone,
-      address: client.address,
-      number: client.number,
-      neighborhood: client.neighborhood,
-      city: client.city,
-      state: client.state,
-      zipCode: client.zip_code,
-      createdAt: new Date(client.created_at)
-    }));
-  },
-
-  async addClient(client: Client): Promise<void> {
-    const { error } = await supabase
-      .from('clients')
-      .insert({
-        id: client.id,
-        type: client.type,
-        name: client.name,
-        document: client.document,
-        email: client.email,
-        phone: client.phone,
-        address: client.address,
-        number: client.number,
-        neighborhood: client.neighborhood,
-        city: client.city,
-        state: client.state,
-        zip_code: client.zipCode,
-        created_at: client.createdAt.toISOString()
-      });
-    
-    if (error) {
-      console.error('Error adding client:', error);
-      throw error;
-    }
-  },
+  //aqui
 
   async updateClient(id: string, client: Client): Promise<void> {
     const { error } = await supabase
