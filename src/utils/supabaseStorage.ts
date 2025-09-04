@@ -577,42 +577,6 @@ export const supabaseStorage = {
 
   //aqui
 
-  async updateClient(id: string, client: Client): Promise<void> {
-    const { error } = await supabase
-      .from('clients')
-      .update({
-        type: client.type,
-        name: client.name,
-        document: client.document,
-        email: client.email,
-        phone: client.phone,
-        address: client.address,
-        number: client.number,
-        neighborhood: client.neighborhood,
-        city: client.city,
-        state: client.state,
-        zip_code: client.zipCode
-      })
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error updating client:', error);
-      throw error;
-    }
-  },
-
-  async deleteClient(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('clients')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error deleting client:', error);
-      throw error;
-    }
-  },
-
   // Counters
   async getCounters(): Promise<Counters> {
     try {
