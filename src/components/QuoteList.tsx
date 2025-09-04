@@ -234,13 +234,15 @@ export const QuoteList: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleEditQuote(quote)}
-              className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm"
-            >
-              <Edit size={16} className="mr-1" />
-              Editar
-            </button>
+            {quote.status !== 'approved' && (
+              <button
+                onClick={() => handleEditQuote(quote)}
+                className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm"
+              >
+                <Edit size={16} className="mr-1" />
+                Editar
+              </button>
+            )}
 
             <button
               onClick={() => generateQuotePDF(quote)}
@@ -347,13 +349,15 @@ export const QuoteList: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleEditQuote(quote)}
-                      className="text-blue-600 hover:text-blue-900"
-                      title="Editar"
-                    >
-                      <Edit size={16} />
-                    </button>
+                    {quote.status !== 'approved' && (
+                      <button
+                        onClick={() => handleEditQuote(quote)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="Editar"
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
                     <button
                       onClick={() => generateQuotePDF(quote)}
                       className="text-green-600 hover:text-green-900"
