@@ -577,7 +577,7 @@ export const supabaseStorage = {
 
   // Counters
   async getCounters(): Promise<Counters> {
-    const COUNTER_ID = 'main_counter';
+    const COUNTER_ID = '00000000-0000-0000-0000-000000000001';
     try {
       const { data, error } = await supabase
         .from('counters')
@@ -607,7 +607,7 @@ export const supabaseStorage = {
   },
 
   async incrementCounter(type: 'quote' | 'order'): Promise<number> {
-    const COUNTER_ID = 'main_counter';
+    const COUNTER_ID = '00000000-0000-0000-0000-000000000001';
     const counters = await this.getCounters();
     const newValue = counters[type] + 1;
     
