@@ -14,8 +14,12 @@ import {
   Map
 } from 'lucide-react';
 
-export const LocationManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'states' | 'cities'>('states');
+interface LocationManagementProps {
+  activeTabProp?: 'states' | 'cities';
+}
+
+export const LocationManagement: React.FC<LocationManagementProps> = ({ activeTabProp = 'states' }) => {
+  const [activeTab, setActiveTab] = useState<'states' | 'cities'>(activeTabProp);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [filteredStates, setFilteredStates] = useState<State[]>([]);
@@ -29,6 +33,11 @@ export const LocationManagement: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'state' | 'city'; item: State | City } | null>(null);
+
+  // Update activeTab when prop changes
+  React.useEffect(() => {
+    setActiveTab(activeTabProp);
+  }, [activeTabProp]);
 
   const [stateFormData, setStateFormData] = useState({
     name: '',
@@ -438,7 +447,8 @@ export const LocationManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Abas */}
+      {/* Abas - Ocultar quando usado como prop específica */}
+      {!activeTabProp && (
       <div className="bg-white rounded-lg shadow-md">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
@@ -477,6 +487,14 @@ export const LocationManagement: React.FC = () => {
           {activeTab === 'states' ? renderStatesTab() : renderCitiesTab()}
         </div>
       </div>
+      )}
+      
+      {/* Renderização direta quando usado com prop */}
+      {activeTabProp && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          {activeTab === 'states' ? renderStatesTab() : renderCitiesTab()}
+        </div>
+      )}
 
       {/* Modal de Formulário de Estado */}
       {showStateForm && (

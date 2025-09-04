@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CompanySettings as CompanySettingsType } from '../types';
 import { supabaseStorage } from '../utils/supabaseStorage';
 import { Building2, Save, Upload, X, CheckCircle, Users, MapPin, UserCog } from 'lucide-react';
+import { Building } from 'lucide-react';
 import { validateCNPJ, formatDocument, formatPhone, formatZipCode } from '../utils/validators';
 import { UserManagement } from './UserManagement';
 import { LocationManagement } from './LocationManagement';
@@ -9,7 +10,7 @@ import { supabaseAuth } from '../utils/supabaseAuth';
 import { dataManager } from '../utils/dataManager';
 
 export const CompanySettings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'company' | 'users' | 'locations'>('company');
+  const [activeTab, setActiveTab] = useState<'company' | 'users' | 'locations' | 'cities'>('company');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [settings, setSettings] = useState<Partial<CompanySettingsType>>({
     companyName: '',
@@ -199,9 +200,19 @@ export const CompanySettings: React.FC = () => {
     <div>
       <div className="flex items-center mb-6">
         <MapPin className="text-blue-600 mr-3" size={32} />
-        <h3 className="text-xl font-semibold text-gray-900">Estados e Cidades</h3>
+        <h3 className="text-xl font-semibold text-gray-900">Estados</h3>
       </div>
-      <LocationManagement />
+      <LocationManagement activeTabProp="states" />
+    </div>
+  );
+
+  const renderCityManagement = () => (
+    <div>
+      <div className="flex items-center mb-6">
+        <Building className="text-green-600 mr-3" size={32} />
+        <h3 className="text-xl font-semibold text-gray-900">Cidades</h3>
+      </div>
+      <LocationManagement activeTabProp="cities" />
     </div>
   );
 
@@ -433,7 +444,18 @@ export const CompanySettings: React.FC = () => {
               }`}
             >
               <MapPin size={20} className="inline mr-2" />
-              Estados e Cidades
+              Estados
+            </button>
+            <button
+              onClick={() => setActiveTab('cities')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'cities'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Building size={20} className="inline mr-2" />
+              Cidades
             </button>
           </nav>
         </div>
@@ -442,6 +464,7 @@ export const CompanySettings: React.FC = () => {
           {activeTab === 'company' && renderCompanyForm()}
           {activeTab === 'users' && currentUser?.role === 'admin' && renderUserManagement()}
           {activeTab === 'locations' && renderLocationManagement()}
+          {activeTab === 'cities' && renderCityManagement()}
         </div>
       </div>
 
