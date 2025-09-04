@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { State, City } from '../types';
-import { storage } from '../utils/storage';
+import { supabaseStorage } from '../utils/supabaseStorage';
 import { 
   MapPin, 
   Plus, 
@@ -63,8 +63,12 @@ export const LocationManagement: React.FC = () => {
   }, [states, cities, searchTerm, activeTab]);
 
   const loadData = () => {
-    const loadedStates = storage.getStates();
-    const loadedCities = storage.getCities();
+    loadDataAsync();
+  };
+
+  const loadDataAsync = async () => {
+    const loadedStates = await supabaseStorage.getStates();
+    const loadedCities = await supabaseStorage.getCities();
     setStates(loadedStates);
     setCities(loadedCities);
   };
@@ -90,10 +94,11 @@ export const LocationManagement: React.FC = () => {
     }
 
     if (stateFormData.name && !storage.isStateNameUnique(stateFormData.name, editingState?.id)) {
+    if (stateFormData.name && !(await supabaseStorage.isStateNameUnique(stateFormData.name, editingState?.id))) {
       newErrors.name = 'Este nome de estado já existe';
     }
 
-    if (stateFormData.code && !storage.isStateCodeUnique(stateFormData.code, editingState?.id)) {
+    if (stateFormData.code && !(await supabaseStorage.isStateCodeUnique(stateFormData.code, editingState?.id))) {
       newErrors.code = 'Este código UF já existe';
     }
 
@@ -107,7 +112,7 @@ export const LocationManagement: React.FC = () => {
     if (!cityFormData.name.trim()) newErrors.name = 'Nome da cidade é obrigatório';
     if (!cityFormData.stateId) newErrors.stateId = 'Estado é obrigatório';
 
-    if (cityFormData.name && cityFormData.stateId && !storage.isCityNameUnique(cityFormData.name, cityFormData.stateId, editingCity?.id)) {
+    if (cityFormData.name && cityFormData.stateId && !(await supabaseStorage.isCityNameUnique(cityFormData.name, cityFormData.stateId, editingCity?.id))) {
       newErrors.name = 'Esta cidade já existe neste estado';
     }
 
@@ -208,7 +213,8 @@ export const LocationManagement: React.FC = () => {
     try {
       if (itemToDelete.type === 'state') {
         // Verificar se há cidades vinculadas
-        const linkedCities = cities.filter(city => city.stateId === itemToDelete.item.id);
+        const loadedCities = await supabaseStorage.getCities();
+        const linkedCities = loadedCities.filter(city => city.stateId === itemToDelete.item.id);
         if (linkedCities.length > 0) {
           alert(`Não é possível excluir este estado pois há ${linkedCities.length} cidade(s) vinculada(s) a ele.`);
           setShowDeleteModal(false);
