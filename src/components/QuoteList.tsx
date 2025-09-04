@@ -270,13 +270,15 @@ export const QuoteList: React.FC = () => {
               PDF
             </button>
 
-            <button
-              onClick={() => handleSendEmail(quote)}
-              className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center text-sm"
-            >
-              <Mail size={16} className="mr-1" />
-              Enviar
-            </button>
+            {quote.status !== 'approved' && (
+              <button
+                onClick={() => handleSendEmail(quote)}
+                className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center text-sm"
+              >
+                <Mail size={16} className="mr-1" />
+                Enviar
+              </button>
+            )}
 
             {quote.status === 'sent' && (
               <button
@@ -383,13 +385,15 @@ export const QuoteList: React.FC = () => {
                     >
                       <Download size={16} />
                     </button>
-                    <button
-                      onClick={() => handleSendEmail(quote)}
-                      className="text-purple-600 hover:text-purple-900"
-                      title="Enviar por Email"
-                    >
-                      <Mail size={16} />
-                    </button>
+                    {quote.status !== 'approved' && (
+                      <button
+                        onClick={() => handleSendEmail(quote)}
+                        className="text-purple-600 hover:text-purple-900"
+                        title="Enviar por Email"
+                      >
+                        <Mail size={16} />
+                      </button>
+                    )}
                     {quote.status === 'sent' && (
                       <button
                         onClick={() => handleApproveQuote(quote)}
