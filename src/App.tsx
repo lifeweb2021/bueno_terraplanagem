@@ -26,6 +26,9 @@ function App() {
   }, []);
 
   const loadAllData = async () => {
+    // Initialize default admin user if it doesn't exist
+    await supabaseStorage.initializeDefaultAdminUser();
+    
     // Carregar configurações da empresa
     try {
       const settings = await supabaseStorage.getCompanySettings();
