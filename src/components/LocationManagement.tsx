@@ -83,7 +83,7 @@ export const LocationManagement: React.FC = () => {
     setErrors({});
   };
 
-  const validateStateForm = () => {
+  const validateStateForm = async () => {
     const newErrors: Record<string, string> = {};
 
     if (!stateFormData.name.trim()) newErrors.name = 'Nome do estado é obrigatório';
@@ -93,7 +93,6 @@ export const LocationManagement: React.FC = () => {
       newErrors.code = 'Código UF deve ter 2 caracteres';
     }
 
-    if (stateFormData.name && !storage.isStateNameUnique(stateFormData.name, editingState?.id)) {
     if (stateFormData.name && !(await supabaseStorage.isStateNameUnique(stateFormData.name, editingState?.id))) {
       newErrors.name = 'Este nome de estado já existe';
     }
@@ -106,7 +105,7 @@ export const LocationManagement: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateCityForm = () => {
+  const validateCityForm = async () => {
     const newErrors: Record<string, string> = {};
 
     if (!cityFormData.name.trim()) newErrors.name = 'Nome da cidade é obrigatório';
