@@ -280,7 +280,7 @@ export const QuoteList: React.FC = () => {
               </button>
             )}
 
-            {quote.status === 'sent' && (
+            {(quote.status === 'draft' || quote.status === 'sent') && (
               <button
                 onClick={() => handleApproveQuote(quote)}
                 className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center text-sm"
@@ -394,7 +394,7 @@ export const QuoteList: React.FC = () => {
                         <Mail size={16} />
                       </button>
                     )}
-                    {quote.status === 'sent' && (
+                    {(quote.status === 'draft' || quote.status === 'sent') && (
                       <button
                         onClick={() => handleApproveQuote(quote)}
                         className="text-green-600 hover:text-green-900"
