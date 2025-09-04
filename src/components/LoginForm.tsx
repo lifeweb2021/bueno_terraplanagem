@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { User as UserIcon, Lock, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
 import { supabaseAuth } from '../utils/supabaseAuth';
 import { supabaseStorage } from '../utils/supabaseStorage';
- 
+
 interface LoginFormProps {
   onLogin: (session: any) => void;
 }
