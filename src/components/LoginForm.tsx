@@ -24,6 +24,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const loadCompanySettings = async () => {
     try {
       const settings = await supabaseStorage.getCompanySettings();
+      console.log('Company settings loaded:', settings); // Debug log
       setCompanySettings(settings);
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
@@ -73,6 +74,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                 src={companySettings.logo} 
                 alt="Logo da empresa" 
                 className="max-w-full max-h-full object-contain"
+                onError={(e) => {
+                  console.error('Erro ao carregar logo:', e);
+                  // Fallback para ícone padrão se a imagem falhar
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             </div>
           ) : (
