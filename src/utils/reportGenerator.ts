@@ -3,10 +3,10 @@ import { Client, Order } from '../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { formatCurrency } from './validators';
-import { storage } from './storage';
+import { supabaseStorage } from './supabaseStorage';
 
-const addReportHeader = (doc: jsPDF, title: string) => {
-  const companySettings = storage.getCompanySettings();
+const addReportHeader = async (doc: jsPDF, title: string) => {
+  const companySettings = await supabaseStorage.getCompanySettings();
   
   if (companySettings) {
     // Logo (se existir)
@@ -65,10 +65,10 @@ const addReportHeader = (doc: jsPDF, title: string) => {
   return 65; // Retorna a posição Y onde o conteúdo deve começar
 };
 
-export const generateOrdersReportPDF = (orders: Order[], filters: any) => {
+export const generateOrdersReportPDF = async (orders: Order[], filters: any) => {
   const doc = new jsPDF('p', 'mm', 'a4');
   
-  let currentY = addReportHeader(doc, 'RELATÓRIO DE PEDIDOS');
+  let currentY = await addReportHeader(doc, 'RELATÓRIO DE PEDIDOS');
   
   // Informações dos filtros aplicados
   doc.setFontSize(8);
@@ -80,7 +80,8 @@ export const generateOrdersReportPDF = (orders: Order[], filters: any) => {
   doc.setFontSize(7);
   
   if (filters.clientId !== 'all') {
-    const client = storage.getClients().find(c => c.id === filters.clientId);
+    const clients = await supabaseStorage.getClients();
+    const client = clients.find(c => c.id === filters.clientId);
     doc.text(`Cliente: ${client?.name || 'N/A'}`, 20, currentY);
     currentY += 4;
   }
@@ -189,13 +190,13 @@ export const generateOrdersReportPDF = (orders: Order[], filters: any) => {
   doc.save(`relatorio-pedidos-${format(new Date(), 'yyyy-MM-dd', { locale: ptBR })}.pdf`);
 };
 
-export const generateClientsReportPDF = (clients: Client[], filters: any) => {
+export const generateClientsReportPDF = async (clients: Client[], filters: any) => {
   const doc = new jsPDF('p', 'mm', 'a4');
   
   // Ordenar clientes alfabeticamente
   const sortedClients = [...clients].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   
-  let currentY = addReportHeader(doc, 'RELATÓRIO DE CLIENTES');
+  let currentY = await addReportHeader(doc, 'RELATÓRIO DE CLIENTES');
   
   // Informações dos filtros aplicados
   doc.setFontSize(8);
@@ -279,10 +280,10 @@ export const generateClientsReportPDF = (clients: Client[], filters: any) => {
   doc.save(`relatorio-clientes-${format(new Date(), 'yyyy-MM-dd', { locale: ptBR })}.pdf`);
 };
 
-export const generateClientOrdersReportPDF = (orders: Order[], filters: any) => {
+export const generateClientOrdersReportPDF = async (orders: Order[], filters: any) => {
   const doc = new jsPDF('p', 'mm', 'a4');
   
-  let currentY = addReportHeader(doc, 'RELATÓRIO DE PEDIDOS POR CLIENTE');
+  let currentY = await addReportHeader(doc, 'RELATÓRIO DE PEDIDOS POR CLIENTE');
   
   // Informações dos filtros aplicados
   doc.setFontSize(8);
@@ -294,7 +295,8 @@ export const generateClientOrdersReportPDF = (orders: Order[], filters: any) => 
   doc.setFontSize(7);
   
   if (filters.clientId !== 'all') {
-    const client = storage.getClients().find(c => c.id === filters.clientId);
+    const clients = await supabaseStorage.getClients();
+    const client = clients.find(c => c.id === filters.clientId);
     doc.text(`Cliente: ${client?.name || 'N/A'}`, 20, currentY);
     currentY += 4;
   }
@@ -305,7 +307,7 @@ export const generateClientOrdersReportPDF = (orders: Order[], filters: any) => 
   }
   
   if (filters.state !== 'all') {
-    const states = storage.getStates();
+    const states = supabaseStorage.getStates();
     const selectedState = states.find(s => s.code === filters.state);
     doc.text(`Estado: ${selectedState ? `${selectedState.name} (${selectedState.code})` : filters.state}`, 20, currentY);
     currentY += 4;

@@ -239,7 +239,7 @@ const addFooter = (doc: jsPDF, quote: Quote, yPosition: number) => {
   }
 };
 
-const addReceiptFooter = (doc: jsPDF, order: Order, yPosition: number, quote?: Quote) => {
+const addReceiptFooter = async (doc: jsPDF, order: Order, yPosition: number, quote?: Quote) => {
   // Verificar se há espaço suficiente na página atual
   const pageHeight = doc.internal.pageSize.height;
   const footerHeight = 80; // Altura estimada do rodapé com observações e assinatura
@@ -280,6 +280,7 @@ const addReceiptFooter = (doc: jsPDF, order: Order, yPosition: number, quote?: Q
   doc.text('_________________________________', 20, signatureY);
   doc.text('Assinatura da Empresa', 20, signatureY + 6);
   
+}
 const addReportHeader = async (doc: jsPDF, title: string) => {
   const companySettings = await supabaseStorage.getCompanySettings();
   if (companySettings && companySettings.cnpj) {
@@ -354,7 +355,7 @@ export const generateReceiptPDFBlob = async (order: Order): Promise<Blob> => {
   const clientY = addClientInfo(doc, order.client, 75);
   const itemsEndY = addItemsTable(doc, order.services, order.products, clientY);
   
-  addReceiptFooter(doc, order, itemsEndY, originalQuote);
+  await addReceiptFooter(doc, order, itemsEndY, originalQuote);
   
   return doc.output('blob');
 };
