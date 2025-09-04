@@ -68,18 +68,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         <div className="text-center mb-8">
           {companySettings?.logo ? (
             <div className="mx-auto w-40 h-32 mb-4 flex items-center justify-center">
-              
-              
               <img 
-                src={companySettings?.logo} 
+                src={companySettings.logo} 
                 alt="Logo da empresa" 
                 className="max-w-full max-h-full object-contain"
                 onError={(e) => {
                   console.error('Erro ao carregar logo:', e);
-                  // Fallback para ícone padrão se a imagem falhar
-                  e.currentTarget.style.display = 'none';
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.display = 'none';
+                  // Mostrar ícone padrão quando a imagem falhar
+                  const fallbackIcon = target.parentElement?.querySelector('.fallback-icon');
+                  if (fallbackIcon) {
+                    (fallbackIcon as HTMLElement).style.display = 'flex';
+                  }
                 }}
               />
+              <div className="fallback-icon w-32 h-32 bg-blue-600 rounded-full items-center justify-center" style={{ display: 'none' }}>
+                <Shield className="text-white" size={64} />
+              </div>
             </div>
           ) : (
             <div className="mx-auto w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center mb-4">
@@ -87,7 +93,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
             </div>
           )}
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {companySettings?.companyName || 'Sistema de Gestão Comercial'}
+            {companySettings?.companyName || 'RB Bueno Terraplanagem'}
           </h1>
           <p className="text-gray-600">
             Faça login para acessar o painel
