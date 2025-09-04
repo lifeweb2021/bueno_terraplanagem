@@ -16,7 +16,7 @@ import {
   Grid,
   Play,
   Pause,
-  Square
+  Square,
   Eye,
   X
 } from 'lucide-react';
