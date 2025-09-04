@@ -46,9 +46,9 @@ export const ReportsList: React.FC = () => {
     state: 'all'
   });
 
-  const [states, setStates] = useState(storage.getStates());
-  const [cities, setCities] = useState(storage.getCities());
-  const [filteredCitiesForReports, setFilteredCitiesForReports] = useState(storage.getCities());
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [filteredCitiesForReports, setFilteredCitiesForReports] = useState([]);
 
   // Estatísticas independentes dos filtros
   const [completedOrders, setCompletedOrders] = useState<Order[]>([]);
