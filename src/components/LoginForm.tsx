@@ -70,8 +70,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
             <div className="mx-auto w-40 h-32 mb-4 flex items-center justify-center">
               
               
-              {/*<img 
-                src={companySettings.logo} 
+              <img 
+                src={companySettings?.logo} 
                 alt="Logo da empresa" 
                 className="max-w-full max-h-full object-contain"
                 onError={(e) => {
@@ -79,7 +79,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                   // Fallback para ícone padrão se a imagem falhar
                   e.currentTarget.style.display = 'none';
                 }}
-              />*/}
+              />
             </div>
           ) : (
             <div className="mx-auto w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center mb-4">
