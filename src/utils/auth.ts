@@ -6,12 +6,12 @@ const STORAGE_KEYS = {
 } as const;
 
 // Hash simples para senhas (em produção usar bcrypt)
-const hashPassword = (password: string): string => {
+export const hashPassword = (password: string): string => {
   // Implementação básica - em produção usar biblioteca de hash segura
   return btoa(password + 'salt_key_2025');
 };
 
-const verifyPassword = (password: string, hash: string): boolean => {
+export const verifyPassword = (password: string, hash: string): boolean => {
   const hashedInput = hashPassword(password);
   console.log('Verificando senha:', { password, hash, hashedInput, match: hashedInput === hash });
   return hashedInput === hash;
@@ -36,7 +36,7 @@ export const authService = {
   addUser: (user: User): void => {
     const users = authService.getUsers();
     // Hash da senha antes de salvar
-    const hashedPassword = hashPassword(user.password);
+    const hashedPassword = authService.hashPassword(user.password);
     console.log('Criando usuário:', { originalPassword: user.password, hashedPassword });
     const hashedUser = { ...user, password: hashedPassword };
     users.push(hashedUser);
@@ -49,7 +49,7 @@ export const authService = {
     if (index !== -1) {
       // Se a senha foi alterada e não está hasheada, fazer hash
       if (updatedUser.password && updatedUser.password.length < 50) {
-        updatedUser.password = hashPassword(updatedUser.password);
+        updatedUser.password = authService.hashPassword(updatedUser.password);
       }
       users[index] = updatedUser;
       authService.saveUsers(users);
@@ -161,5 +161,9 @@ export const authService = {
       authService.addUser(defaultUser);
       console.log('Usuário padrão criado com sucesso');
     }
-  }
+  },
+
+  // Export hash functions for use in other modules
+  hashPassword,
+  verifyPassword
 };
