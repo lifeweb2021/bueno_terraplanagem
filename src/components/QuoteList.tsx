@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Quote, Order } from '../types';
 import { supabaseStorage } from '../utils/supabaseStorage';
+import {
   FileText, 
   Plus, 
   Search, 
