@@ -95,6 +95,9 @@ export const supabaseStorage = {
         throw error;
       }
 
+      if (!data) {
+        return null;
+      }
  
       
       return {
