@@ -93,7 +93,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
             </div>
           )}
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {companySettings?.companyName || 'Sistema de Gestão Comercial'}
+            {companySettings?.companyName || 'Sistema de Orçamentos'}
           </h1>
           <p className="text-gray-600">
             Faça login para acessar o painel
