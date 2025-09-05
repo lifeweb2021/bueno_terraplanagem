@@ -24,7 +24,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const loadCompanySettings = async () => {
     try {
       const settings = await supabaseStorage.getCompanySettings();
-      console.log('Company settings loaded:', settings); // Debug log
       setCompanySettings(settings);
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
@@ -67,25 +66,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         {/* Logo e Título */}
         <div className="text-center mb-8">
           {companySettings?.logo ? (
-            <div className="mx-auto w-40 h-32 mb-4 flex items-center justify-center">
+            <div className="mx-auto w-40 h-32 mb-4 flex items-center justify-center relative">
               <img 
                 src={companySettings.logo} 
                 alt="Logo da empresa" 
-                className="max-w-full max-h-full object-contain"
+                className="max-w-full max-h-full object-contain rounded-lg"
                 onError={(e) => {
                   console.error('Erro ao carregar logo:', e);
                   const target = e.currentTarget as HTMLImageElement;
-                  target.style.display = 'none';
-                  // Mostrar ícone padrão quando a imagem falhar
-                  const fallbackIcon = target.parentElement?.querySelector('.fallback-icon');
-                  if (fallbackIcon) {
-                    (fallbackIcon as HTMLElement).style.display = 'flex';
-                  }
+                  // Esconder a imagem e mostrar o fallback
+                  target.parentElement!.innerHTML = `
+                    <div class="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center">
+                      <svg class="text-white" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                      </svg>
+                    </div>
+                  `;
                 }}
               />
-              <div className="fallback-icon w-32 h-32 bg-blue-600 rounded-full items-center justify-center" style={{ display: 'none' }}>
-                <Shield className="text-white" size={64} />
-              </div>
             </div>
           ) : (
             <div className="mx-auto w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center mb-4">
@@ -112,7 +110,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
                 placeholder="Digite seu email"
                 required
                 autoComplete="email"
@@ -125,12 +123,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
               Senha
             </label>
             <div className="relative">
-              <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
                 placeholder="Digite sua senha"
                 required
                 autoComplete="current-password"
