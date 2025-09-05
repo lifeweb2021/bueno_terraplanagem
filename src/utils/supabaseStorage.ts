@@ -573,6 +573,18 @@ export const supabaseStorage = {
     }
   },
 
+  async deleteOrder(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error deleting order:', error);
+      throw error;
+    }
+  },
+
   //aqui
 
   // Counters

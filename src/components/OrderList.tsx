@@ -35,6 +35,8 @@ const OrderList: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [orderToComplete, setOrderToComplete] = useState<Order | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [showItemsModal, setShowItemsModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -117,6 +119,27 @@ const OrderList: React.FC = () => {
       handleUpdateOrderStatus(orderToComplete.id, 'completed');
       setShowCompleteModal(false);
       setOrderToComplete(null);
+    }
+  };
+
+  const handleDeleteOrder = (order: Order) => {
+    setOrderToDelete(order);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteOrder = async () => {
+    if (orderToDelete) {
+      try {
+        await supabaseStorage.deleteOrder(orderToDelete.id);
+        dataManager.updateLocalData('orders', 'delete', null, orderToDelete.id);
+        setShowDeleteModal(false);
+        setOrderToDelete(null);
+        setSuccessMessage('Pedido excluído com sucesso!');
+        setShowSuccessModal(true);
+      } catch (error) {
+        console.error('Erro ao excluir pedido:', error);
+        alert('Erro ao excluir pedido. Tente novamente.');
+      }
     }
   };
 
@@ -244,6 +267,7 @@ const OrderList: React.FC = () => {
               <Eye size={16} className="mr-1" />
               Ver Itens
             </button>
+            
             {order.status !== 'cancelled' && order.status !== 'completed' && (
               <button
                 onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')}
@@ -253,6 +277,14 @@ const OrderList: React.FC = () => {
                 Cancelar
               </button>
             )}
+            
+            <button
+              onClick={() => handleDeleteOrder(order)}
+              className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center text-sm"
+            >
+              <Trash2 size={16} className="mr-1" />
+              Excluir
+            </button>
           </div>
         </div>
       ))}
@@ -348,6 +380,13 @@ const OrderList: React.FC = () => {
                       title="Ver Itens"
                     >
                       <Eye size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteOrder(order)}
+                      className="text-red-600 hover:text-red-900"
+                      title="Excluir"
+                    >
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </td>
@@ -448,6 +487,56 @@ const OrderList: React.FC = () => {
               >
                 Fechar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showDeleteModal && orderToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+                <Trash2 className="text-red-600" size={24} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Confirmar Exclusão
+              </h3>
+              <p className="text-gray-600 mb-2">
+                Tem certeza que deseja excluir o pedido:
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="font-semibold text-blue-900 mb-1">
+                  {orderToDelete.number}
+                </p>
+                <p className="text-sm text-blue-800 mb-1">
+                  Cliente: {orderToDelete.client.name}
+                </p>
+                <p className="text-sm text-blue-800">
+                  Valor: {formatCurrency(orderToDelete.total)}
+                </p>
+              </div>
+              <p className="text-sm text-red-600 mb-6">
+                Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setOrderToDelete(null);
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteOrder}
+                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Excluir
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -33,6 +33,8 @@ export const QuoteList: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [quoteToApprove, setQuoteToApprove] = useState<Quote | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [quoteToDelete, setQuoteToDelete] = useState<Quote | null>(null);
 
   useEffect(() => {
     loadQuotesReactive();
@@ -105,10 +107,22 @@ export const QuoteList: React.FC = () => {
   };
 
   const handleDeleteQuote = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este orçamento?')) {
+    const quote = quotes.find(q => q.id === id);
+    if (quote) {
+      setQuoteToDelete(quote);
+      setShowDeleteModal(true);
+    }
+  };
+
+  const confirmDeleteQuote = async () => {
+    if (quoteToDelete) {
       try {
-        await supabaseStorage.deleteQuote(id);
-        dataManager.updateLocalData('quotes', 'delete', null, id);
+        await supabaseStorage.deleteQuote(quoteToDelete.id);
+        dataManager.updateLocalData('quotes', 'delete', null, quoteToDelete.id);
+        setShowDeleteModal(false);
+        setQuoteToDelete(null);
+        setSuccessMessage('Orçamento excluído com sucesso!');
+        setShowSuccessModal(true);
       } catch (error) {
         console.error('Erro ao excluir orçamento:', error);
         alert('Erro ao excluir orçamento. Tente novamente.');
@@ -499,6 +513,56 @@ export const QuoteList: React.FC = () => {
               >
                 Fechar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showDeleteModal && quoteToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+                <Trash2 className="text-red-600" size={24} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Confirmar Exclusão
+              </h3>
+              <p className="text-gray-600 mb-2">
+                Tem certeza que deseja excluir o orçamento:
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="font-semibold text-blue-900 mb-1">
+                  {quoteToDelete.number}
+                </p>
+                <p className="text-sm text-blue-800 mb-1">
+                  Cliente: {quoteToDelete.client.name}
+                </p>
+                <p className="text-sm text-blue-800">
+                  Valor: {formatCurrency(quoteToDelete.total)}
+                </p>
+              </div>
+              <p className="text-sm text-red-600 mb-6">
+                Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setQuoteToDelete(null);
+                  }}
+                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDeleteQuote}
+                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Excluir
+                </button>
+              </div>
             </div>
           </div>
         </div>
