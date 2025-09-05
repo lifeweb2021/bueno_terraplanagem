@@ -18,10 +18,10 @@ const supabaseAnonKey = process.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
 
 // Validação para evitar client sem API Key
 if (!supabaseUrl) {
-  throw new Error("❌ SUPABASE_URL não encontrada. Verifique suas variáveis de ambiente.");
+  throw new Error("SUPABASE_URL não encontrada. Verifique suas variáveis de ambiente.");
 }
 if (!supabaseAnonKey) {
-  throw new Error("❌ SUPABASE_ANON_KEY não encontrada. Verifique suas variáveis de ambiente.");
+  throw new Error("SUPABASE_ANON_KEY não encontrada. Verifique suas variáveis de ambiente.");
 }
 
 // Criando client do Supabase
