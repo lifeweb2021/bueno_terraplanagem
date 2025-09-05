@@ -139,7 +139,7 @@ function App() {
     <div className="space-y-8">
       <div className="text-center py-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Sistema de Gestão Comercial
+          Sistema para Gestão de Orçamentos
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
           Gerencie clientes, crie orçamentos profissionais e controle pedidos de forma eficiente
