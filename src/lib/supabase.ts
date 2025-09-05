@@ -13,8 +13,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);*/
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 // Pegando variáveis de ambiente
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.VITE_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
 
 // Validação para evitar client sem API Key
 if (!supabaseUrl) {
