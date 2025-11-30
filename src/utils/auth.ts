@@ -151,7 +151,7 @@ export const authService = {
       const defaultUser: User = {
         id: crypto.randomUUID(),
         username: 'admin',
-        password: 'admin123', // Será hasheada no addUser
+        password: 'RBBueno2025!', // Será hasheada no addUser
         name: 'Administrador',
         email: 'admin@sistema.com',
         role: 'admin',
