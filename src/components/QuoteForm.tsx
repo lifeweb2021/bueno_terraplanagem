@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Client, Quote, Service, Product } from '../types';
-import { storage } from '../utils/storage';
+import { supabaseStorage } from '../utils/supabaseStorage';
 import { Save, X, Plus, Trash2, Calculator } from 'lucide-react';
 import { formatCurrency } from '../utils/validators';
 
@@ -22,13 +22,22 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
   });
 
   useEffect(() => {
-    setClients(storage.getClients());
+    loadClients();
     if (!quote && !formData.validUntil) {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 30);
       setFormData(prev => ({ ...prev, validUntil: futureDate.toISOString().split('T')[0] }));
     }
   }, [quote]);
+
+  const loadClients = async () => {
+    try {
+      const loadedClients = await supabaseStorage.getClients();
+      setClients(loadedClients);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+    }
+  };
 
   const addService = () => {
     const newService: Service = {
@@ -118,8 +127,9 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
     }
 
     const client = clients.find(c => c.id === formData.clientId)!;
-    const counters = storage.getCounters();
-    const quoteNumber = quote?.number || `ORÇ${String(counters.quote).padStart(4, '0')}`;
+    
+    // Generate quote number - will be handled by parent component
+    const quoteNumber = quote?.number || `ORÇ${String(Date.now()).slice(-4)}`;
 
     const quoteData: Quote = {
       id: quote?.id || crypto.randomUUID(),
@@ -137,10 +147,6 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
       createdAt: quote?.createdAt || new Date(),
       updatedAt: new Date()
     };
-
-    if (!quote) {
-      storage.incrementCounter('quote');
-    }
 
     onSave(quoteData);
   };
