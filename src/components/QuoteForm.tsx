@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Client, Quote, Service, Product } from '../types';
-import { supabaseStorage } from '../utils/supabaseStorage';
+import { storage } from '../utils/storage';
 import { Save, X, Plus, Trash2, Calculator } from 'lucide-react';
-import { formatCurrency } from '../utils/validators';
 
 interface QuoteFormProps {
   quote?: Quote;
@@ -22,22 +21,13 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
   });
 
   useEffect(() => {
-    loadClients();
+    setClients(storage.getClients());
     if (!quote && !formData.validUntil) {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 30);
       setFormData(prev => ({ ...prev, validUntil: futureDate.toISOString().split('T')[0] }));
     }
   }, [quote]);
-
-  const loadClients = async () => {
-    try {
-      const loadedClients = await supabaseStorage.getClients();
-      setClients(loadedClients);
-    } catch (error) {
-      console.error('Erro ao carregar clientes:', error);
-    }
-  };
 
   const addService = () => {
     const newService: Service = {
@@ -127,9 +117,8 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
     }
 
     const client = clients.find(c => c.id === formData.clientId)!;
-    
-    // Generate quote number - will be handled by parent component
-    const quoteNumber = quote?.number || `ORÇ${String(Date.now()).slice(-4)}`;
+    const counters = storage.getCounters();
+    const quoteNumber = quote?.number || `ORÇ${String(counters.quote).padStart(4, '0')}`;
 
     const quoteData: Quote = {
       id: quote?.id || crypto.randomUUID(),
@@ -147,6 +136,10 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
       createdAt: quote?.createdAt || new Date(),
       updatedAt: new Date()
     };
+
+    if (!quote) {
+      storage.incrementCounter('quote');
+    }
 
     onSave(quoteData);
   };
@@ -251,7 +244,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
                       <div className="text-sm">
                         <div className="font-medium text-gray-700">Total</div>
                         <div className="text-lg font-bold text-green-600">
-                          {formatCurrency(service.total)}
+                          R$ {service.total.toFixed(2)}
                         </div>
                       </div>
                       <button
@@ -321,7 +314,7 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
                       <div className="text-sm">
                         <div className="font-medium text-gray-700">Total</div>
                         <div className="text-lg font-bold text-green-600">
-                          {formatCurrency(product.total)}
+                          R$ {product.total.toFixed(2)}
                         </div>
                       </div>
                       <button
@@ -354,8 +347,8 @@ export const QuoteForm: React.FC<QuoteFormProps> = ({ quote, onSave, onCancel })
             <div className="flex items-center justify-center bg-blue-50 p-4 rounded-lg">
               <Calculator className="mr-3 text-blue-600" size={24} />
               <div>
-                <div className="text-sm text-gray-600">Subtotal: {formatCurrency(subtotal)}</div>
-                <div className="text-lg font-bold text-blue-600">Total: {formatCurrency(total)}</div>
+                <div className="text-sm text-gray-600">Subtotal: R$ {subtotal.toFixed(2)}</div>
+                <div className="text-lg font-bold text-blue-600">Total: R$ {total.toFixed(2)}</div>
               </div>
             </div>
           </div>

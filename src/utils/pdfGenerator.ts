@@ -2,360 +2,171 @@ import jsPDF from 'jspdf';
 import { Quote, Order, Client } from '../types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { formatCurrency } from './validators';
-import { supabaseStorage } from './supabaseStorage';
 
-const addHeader = async (doc: jsPDF, title: string) => {
-  const companySettings = await supabaseStorage.getCompanySettings();
+const addHeader = (doc: jsPDF, title: string) => {
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text(title, 20, 30);
   
-  if (companySettings) {
-    // Logo (se existir)
-    if (companySettings.logo) {
-      try {
-        // Determinar formato da imagem
-        const imageFormat = companySettings.logo.includes('data:image/png') ? 'PNG' : 
-                           companySettings.logo.includes('data:image/gif') ? 'GIF' : 'JPEG';
-        
-        // Adicionar logo com tamanho fixo
-        doc.addImage(companySettings.logo, imageFormat, 15, 15, 25, 20);
-      } catch (error) {
-        console.warn('Erro ao adicionar logo:', error);
-      }
-    }
-    
-    // Título do documento
-    doc.setFontSize(17);
-    doc.setFont('helvetica', 'bold');
-    doc.text(title, companySettings.logo ? 50 : 20, 22);
-    
-    // Informações da empresa em duas colunas
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    
-    // Coluna esquerda - Dados principais
-    const leftColumn = companySettings.logo ? 50 : 20;
-    doc.text(companySettings.companyName, leftColumn, 30);
-    
-    doc.setFont('helvetica', 'normal');
-    doc.text(`CNPJ: ${companySettings.cnpj}`, leftColumn, 35);
-    doc.text(`Tel: ${companySettings.phone}`, leftColumn, 40);
-    if (companySettings.whatsapp) {
-      doc.text(`WhatsApp: ${companySettings.whatsapp}`, leftColumn, 45);
-    }
-    
-    // Coluna direita - Endereço e email
-    const rightColumn = 120;
-    doc.text(companySettings.email, rightColumn, 30);
-    
-    // Endereço completo formatado
-    const addressLines = [];
-    if (companySettings.address) {
-      addressLines.push(companySettings.address);
-    }
-    if (companySettings.neighborhood) {
-      addressLines.push(companySettings.neighborhood);
-    }
-    if (companySettings.city && companySettings.state) {
-      addressLines.push(`${companySettings.city}/${companySettings.state}`);
-    }
-    if (companySettings.zipCode) {
-      addressLines.push(`CEP: ${companySettings.zipCode}`);
-    }
-    
-    addressLines.forEach((line, index) => {
-      doc.text(line, rightColumn, 35 + (index * 5));
-    });
-    
-  } else {
-    // Fallback se não houver configurações
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(title, 20, 25);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Configure os dados da empresa', 20, 35);
-    doc.text('Acesse Configurações > Dados da Empresa', 20, 42);
-  }
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Sua Empresa LTDA', 20, 45);
+  doc.text('Rua das Flores, 123 - Centro', 20, 55);
+  doc.text('CEP: 12345-678 - Cidade/UF', 20, 65);
+  doc.text('Tel: (11) 9999-9999', 20, 75);
+  doc.text('email@empresa.com', 20, 85);
   
-  // Linha separadora
-  doc.line(15, 55, 195, 55);
+  doc.line(20, 95, 190, 95);
 };
 
 const addClientInfo = (doc: jsPDF, client: Client, yPosition: number) => {
-  doc.setFontSize(8);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('DADOS DO CLIENTE', 20, yPosition);
+  doc.text('Dados do Cliente:', 20, yPosition);
   
-  doc.setFontSize(7);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
   
-  // Informações do cliente compactas em duas linhas
-  const leftColumn = 20;
-  const rightColumn = 105;
+  const clientInfo = [
+    `Nome: ${client.name}`,
+    `${client.type === 'fisica' ? 'CPF' : 'CNPJ'}: ${client.document}`,
+    `Email: ${client.email}`,
+    `Telefone: ${client.phone}`,
+    `Endereço: ${client.address}`,
+    `${client.city}/${client.state} - CEP: ${client.zipCode}`
+  ];
   
-  doc.text(`Nome: ${client.name}`, leftColumn, yPosition + 8);
-  doc.text(`${client.type === 'fisica' ? 'CPF' : 'CNPJ'}: ${client.document}`, rightColumn, yPosition + 8);
+  clientInfo.forEach((info, index) => {
+    doc.text(info, 20, yPosition + 15 + (index * 10));
+  });
   
-  doc.text(`Telefone: ${client.phone}`, leftColumn, yPosition + 14);
-  if (client.city && client.state) {
-    doc.text(`${client.city}/${client.state}`, rightColumn, yPosition + 14);
-  }
-  
-  return yPosition + 22;
+  return yPosition + 80;
 };
 
 const addItemsTable = (doc: jsPDF, services: any[], products: any[], yPosition: number) => {
-  let currentY = yPosition;
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Serviços:', 20, yPosition);
   
-  // Serviços
+  let currentY = yPosition + 15;
+  
   if (services.length > 0) {
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('SERVIÇOS', 20, currentY);
-    currentY += 8;
-    
-    // Cabeçalho da tabela
-    doc.setFontSize(6);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('Descrição', 20, currentY);
-    doc.text('Horas', 120, currentY);
-    doc.text('Valor/Hora', 140, currentY);
+    doc.text('Horas', 100, currentY);
+    doc.text('Valor/Hora', 130, currentY);
     doc.text('Total', 170, currentY);
     
-    doc.line(20, currentY + 1, 190, currentY + 1);
-    currentY += 6;
+    doc.line(20, currentY + 3, 190, currentY + 3);
+    currentY += 10;
     
-    // Itens dos serviços
     doc.setFont('helvetica', 'normal');
     services.forEach((service) => {
-      const descriptionLines = doc.splitTextToSize(service.description, 95);
-      doc.text(descriptionLines, 20, currentY);
-      doc.text(service.hours.toString(), 120, currentY);
-      doc.text(formatCurrency(service.hourlyRate), 140, currentY);
-      doc.text(formatCurrency(service.total), 170, currentY);
-      currentY += Math.max(6, descriptionLines.length * 3);
+      doc.text(service.description, 20, currentY, { maxWidth: 75 });
+      doc.text(service.hours.toString(), 100, currentY);
+      doc.text(`R$ ${service.hourlyRate.toFixed(2)}`, 130, currentY);
+      doc.text(`R$ ${service.total.toFixed(2)}`, 170, currentY);
+      currentY += 10;
     });
-    
-    currentY += 6;
   }
   
-  // Produtos
+  currentY += 10;
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Produtos:', 20, currentY);
+  currentY += 15;
+  
   if (products.length > 0) {
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PRODUTOS', 20, currentY);
-    currentY += 8;
-    
-    // Cabeçalho da tabela
-    doc.setFontSize(6);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.text('Descrição', 20, currentY);
-    doc.text('Qtd', 120, currentY);
-    doc.text('Valor Unit.', 140, currentY);
+    doc.text('Qtd', 100, currentY);
+    doc.text('Valor Unit.', 130, currentY);
     doc.text('Total', 170, currentY);
     
-    doc.line(20, currentY + 1, 190, currentY + 1);
-    currentY += 6;
+    doc.line(20, currentY + 3, 190, currentY + 3);
+    currentY += 10;
     
-    // Itens dos produtos
     doc.setFont('helvetica', 'normal');
     products.forEach((product) => {
-      const descriptionLines = doc.splitTextToSize(product.description, 95);
-      doc.text(descriptionLines, 20, currentY);
-      doc.text(product.quantity.toString(), 120, currentY);
-      doc.text(formatCurrency(product.unitPrice), 140, currentY);
-      doc.text(formatCurrency(product.total), 170, currentY);
-      currentY += Math.max(6, descriptionLines.length * 3);
+      doc.text(product.description, 20, currentY, { maxWidth: 75 });
+      doc.text(product.quantity.toString(), 100, currentY);
+      doc.text(`R$ ${product.unitPrice.toFixed(2)}`, 130, currentY);
+      doc.text(`R$ ${product.total.toFixed(2)}`, 170, currentY);
+      currentY += 10;
     });
   }
   
-  return currentY + 8;
-};
-
-const addFooter = (doc: jsPDF, quote: Quote, yPosition: number) => {
-  // Verificar se há espaço suficiente na página atual
-  const pageHeight = doc.internal.pageSize.height;
-  const footerHeight = 60; // Altura estimada do rodapé
-  
-  if (yPosition + footerHeight > pageHeight - 20) {
-    doc.addPage();
-    yPosition = 20;
-  }
-  
-  // Linha separadora
-  doc.line(20, yPosition, 190, yPosition);
-  
-  // Cálculos dos totais
-  const servicesTotal = quote.services.reduce((sum, service) => sum + service.total, 0);
-  const productsTotal = quote.products.reduce((sum, product) => sum + product.total, 0);
-  
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  
-  let footerY = yPosition + 8;
-  
-  // Resumo dos totais
-  if (quote.services.length > 0) {
-    doc.text(`Total de Serviços: ${formatCurrency(servicesTotal)}`, 130, footerY);
-    footerY += 6;
-  }
-  
-  if (quote.products.length > 0) {
-    doc.text(`Total de Produtos: ${formatCurrency(productsTotal)}`, 130, footerY);
-    footerY += 6;
-  }
-  
-  if (quote.discount > 0) {
-    doc.text(`Subtotal: ${formatCurrency(quote.subtotal)}`, 130, footerY);
-    footerY += 6;
-    doc.text(`Desconto: ${formatCurrency(quote.discount)}`, 130, footerY);
-    footerY += 6;
-  }
-  
-  // Total final destacado
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`VALOR TOTAL: ${formatCurrency(quote.total)}`, 130, footerY);
-  
-  // Observações com quebra de página automática
-  if (quote.notes) {
-    footerY += 15;
-    
-    // Verificar se há espaço para as observações
-    const notesHeight = 30; // Altura estimada das observações
-    if (footerY + notesHeight > pageHeight - 20) {
-      doc.addPage();
-      footerY = 20;
-    }
-    
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    doc.text('OBSERVAÇÕES:', 20, footerY);
-    
-    doc.setFont('helvetica', 'normal');
-    const notesLines = doc.splitTextToSize(quote.notes, 170);
-    doc.text(notesLines, 20, footerY + 6);
-  }
-};
-
-const addReceiptFooter = async (doc: jsPDF, order: Order, yPosition: number, quote?: Quote) => {
-  // Verificar se há espaço suficiente na página atual
-  const pageHeight = doc.internal.pageSize.height;
-  const footerHeight = 80; // Altura estimada do rodapé com observações e assinatura
-  
-  if (yPosition + footerHeight > pageHeight - 20) {
-    doc.addPage();
-    yPosition = 20;
-  }
-  
-  // Linha separadora
-  doc.line(20, yPosition, 190, yPosition);
-  
-  // Total do recibo
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`VALOR TOTAL PAGO: ${formatCurrency(order.total)}`, 130, yPosition + 12);
-  
-  let currentY = yPosition + 25;
-  
-  // Observações (se existirem no orçamento original)
-  if (quote && quote.notes) {
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    doc.text('OBSERVAÇÕES:', 20, currentY);
-    
-    doc.setFont('helvetica', 'normal');
-    const notesLines = doc.splitTextToSize(quote.notes, 170);
-    doc.text(notesLines, 20, currentY + 6);
-    
-    currentY += 6 + (notesLines.length * 4) + 10;
-  }
-  
-  // Assinatura da empresa
-  const signatureY = currentY + 10;
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  
-  doc.text('_________________________________', 20, signatureY);
-  doc.text('Assinatura da Empresa', 20, signatureY + 6);
-  
-}
-const addReportHeader = async (doc: jsPDF, title: string) => {
-  const companySettings = await supabaseStorage.getCompanySettings();
-  if (companySettings && companySettings.cnpj) {
-    doc.text(`CNPJ: ${companySettings.cnpj}`, 20, signatureY + 12);
-  }
+  return currentY + 15;
 };
 
 export const generateQuotePDF = (quote: Quote) => {
-  generateQuotePDFBlob(quote).then(blob => {
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `orcamento-${quote.number}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-  });
-};
-
-// Função para gerar PDF como Blob (exportada para uso no emailService)
-export const generateQuotePDFBlob = async (quote: Quote): Promise<Blob> => {
-  const doc = new jsPDF('p', 'mm', 'a4');
+  const doc = new jsPDF();
   
-  await addHeader(doc, 'ORÇAMENTO');
+  addHeader(doc, 'ORÇAMENTO');
   
-  // Informações do orçamento em uma linha
-  doc.setFontSize(5);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Nº: ${quote.number}`, 20, 60);
-  doc.text(`Data: ${format(quote.createdAt, 'dd/MM/yyyy', { locale: ptBR })}`, 70, 60);
-  doc.text(`Válido até: ${format(quote.validUntil, 'dd/MM/yyyy', { locale: ptBR })}`, 130, 60);
+  doc.setFontSize(12);
+  doc.text(`Orçamento Nº: ${quote.number}`, 20, 110);
+  doc.text(`Data: ${format(quote.createdAt, 'dd/MM/yyyy', { locale: ptBR })}`, 20, 120);
+  doc.text(`Válido até: ${format(quote.validUntil, 'dd/MM/yyyy', { locale: ptBR })}`, 20, 130);
   
-  const clientY = addClientInfo(doc, quote.client, 68);
+  const clientY = addClientInfo(doc, quote.client, 145);
   const itemsEndY = addItemsTable(doc, quote.services, quote.products, clientY);
   
-  addFooter(doc, quote, itemsEndY);
+  // Totais
+  doc.line(20, itemsEndY, 190, itemsEndY);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
   
-  return doc.output('blob');
+  if (quote.discount > 0) {
+    doc.text(`Subtotal: R$ ${quote.subtotal.toFixed(2)}`, 130, itemsEndY + 15);
+    doc.text(`Desconto: R$ ${quote.discount.toFixed(2)}`, 130, itemsEndY + 25);
+    doc.text(`TOTAL: R$ ${quote.total.toFixed(2)}`, 130, itemsEndY + 35);
+  } else {
+    doc.text(`TOTAL: R$ ${quote.total.toFixed(2)}`, 130, itemsEndY + 15);
+  }
+  
+  if (quote.notes) {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Observações:', 20, itemsEndY + 50);
+    doc.text(quote.notes, 20, itemsEndY + 60, { maxWidth: 170 });
+  }
+  
+  doc.save(`orcamento-${quote.number}.pdf`);
 };
 
 export const generateReceiptPDF = (order: Order) => {
-  generateReceiptPDFBlob(order).then(blob => {
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `recibo-${order.number}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-  });
-};
-
-export const generateReceiptPDFBlob = async (order: Order): Promise<Blob> => {
-  const doc = new jsPDF('p', 'mm', 'a4');
+  const doc = new jsPDF();
   
-  // Buscar o orçamento original para pegar as observações
-  const quotes = await supabaseStorage.getQuotes();
-  const originalQuote = quotes.find(q => q.id === order.quoteId);
+  addHeader(doc, 'RECIBO DE PAGAMENTO');
   
-  await addHeader(doc, 'RECIBO DE PAGAMENTO');
-  
-  // Informações do pedido em uma linha
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Nº: ${order.number}`, 20, 65);
-  doc.text(`Data: ${format(order.createdAt, 'dd/MM/yyyy', { locale: ptBR })}`, 70, 65);
+  doc.setFontSize(12);
+  doc.text(`Pedido Nº: ${order.number}`, 20, 110);
+  doc.text(`Data: ${format(order.createdAt, 'dd/MM/yyyy', { locale: ptBR })}`, 20, 120);
   
   if (order.completedAt) {
-    doc.text(`Concluído: ${format(order.completedAt, 'dd/MM/yyyy', { locale: ptBR })}`, 130, 65);
+    doc.text(`Concluído em: ${format(order.completedAt, 'dd/MM/yyyy', { locale: ptBR })}`, 20, 130);
   }
   
-  const clientY = addClientInfo(doc, order.client, 75);
+  const clientY = addClientInfo(doc, order.client, 145);
   const itemsEndY = addItemsTable(doc, order.services, order.products, clientY);
   
-  await addReceiptFooter(doc, order, itemsEndY, originalQuote);
+  // Total
+  doc.line(20, itemsEndY, 190, itemsEndY);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`VALOR TOTAL: R$ ${order.total.toFixed(2)}`, 130, itemsEndY + 20);
   
-  return doc.output('blob');
+  // Assinatura
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('_________________________________', 20, itemsEndY + 60);
+  doc.text('Assinatura do Cliente', 20, itemsEndY + 70);
+  
+  doc.text('_________________________________', 120, itemsEndY + 60);
+  doc.text('Assinatura da Empresa', 120, itemsEndY + 70);
+  
+  doc.save(`recibo-${order.number}.pdf`);
 };
