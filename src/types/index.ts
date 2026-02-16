@@ -6,8 +6,6 @@ export interface Client {
   email: string;
   phone: string;
   address: string;
-  number: string;
-  neighborhood: string;
   city: string;
   state: string;
   zipCode: string;
@@ -52,7 +50,6 @@ export interface CompanySettings {
   companyName: string;
   cnpj: string;
   address: string;
-  neighborhood: string;
   city: string;
   state: string;
   zipCode: string;
@@ -74,20 +71,4 @@ export interface Order {
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   createdAt: Date;
   completedAt?: Date;
-  isFromQuote?: boolean; // Indica se é um pedido temporário de orçamento aprovado
-}
-
-export interface State {
-  id: string;
-  name: string;
-  code: string; // UF
-  createdAt: Date;
-}
-
-export interface City {
-  id: string;
-  name: string;
-  stateId: string;
-  state?: State;
-  createdAt: Date;
 }

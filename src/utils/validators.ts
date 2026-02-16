@@ -87,11 +87,3 @@ export const formatPhone = (phone: string): string => {
   }
   return phone;
 };
-
-export const formatZipCode = (zipCode: string): string => {
-  const numbers = zipCode.replace(/\D/g, '');
-  if (numbers.length === 8) {
-    return numbers.replace(/(\d{5})(\d{3})/, '$1-$2');
-  }
-  return zipCode;
-};
