@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
-import { storage } from '../utils/storage';
+import { supabaseStorage } from '../utils/supabaseStorage';
 import { User, Building2, Save, X } from 'lucide-react';
+import { validateCPF, validateCNPJ, formatDocument, formatPhone } from '../utils/validators';
 
 interface ClientFormProps {
   client?: Client;
@@ -10,6 +11,9 @@ interface ClientFormProps {
 }
 
 export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel }) => {
+  const [states, setStates] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
+  const [filteredCities, setFilteredCities] = useState<any[]>([]);
   const [formData, setFormData] = useState<Partial<Client>>({
     type: 'fisica',
     name: '',
@@ -17,6 +21,8 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
     email: '',
     phone: '',
     address: '',
+    number: '',
+    neighborhood: '',
     city: '',
     state: '',
     zipCode: '',
@@ -25,24 +31,37 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const validateDocument = (document: string, type: 'fisica' | 'juridica') => {
-    if (type === 'fisica') {
-      return document.replace(/\D/g, '').length === 11;
-    } else {
-      return document.replace(/\D/g, '').length === 14;
+  useEffect(() => {
+    loadLocationData();
+  }, []);
+
+  const loadLocationData = async () => {
+    try {
+      const loadedStates = await supabaseStorage.getStates();
+      const loadedCities = await supabaseStorage.getCities();
+      setStates(loadedStates);
+      setCities(loadedCities);
+    } catch (error) {
+      console.error('Erro ao carregar estados e cidades:', error);
     }
   };
 
-  const formatDocument = (document: string, type: 'fisica' | 'juridica') => {
-    const numbers = document.replace(/\D/g, '');
-    if (type === 'fisica') {
-      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  useEffect(() => {
+    // Filtrar cidades baseado no estado selecionado
+    if (formData.state) {
+      const selectedState = states.find(s => s.code === formData.state);
+      if (selectedState) {
+        const stateCities = cities.filter(c => c.stateId === selectedState.id);
+        setFilteredCities(stateCities);
+      } else {
+        setFilteredCities([]);
+      }
     } else {
-      return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+      setFilteredCities(cities);
     }
-  };
+  }, [formData.state, states, cities]);
 
-  const validateForm = () => {
+  const validateForm = async () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name?.trim()) newErrors.name = 'Nome é obrigatório';
@@ -50,22 +69,46 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
     if (!formData.email?.trim()) newErrors.email = 'Email é obrigatório';
     if (!formData.phone?.trim()) newErrors.phone = 'Telefone é obrigatório';
 
-    if (formData.document && !validateDocument(formData.document, formData.type!)) {
-      newErrors.document = formData.type === 'fisica' ? 'CPF inválido' : 'CNPJ inválido';
+    if (formData.document) {
+      const isValid = formData.type === 'fisica' 
+        ? validateCPF(formData.document) 
+        : validateCNPJ(formData.document);
+      
+      if (!isValid) {
+        newErrors.document = formData.type === 'fisica' ? 'CPF inválido' : 'CNPJ inválido';
+      } else {
+        try {
+          const isUnique = await supabaseStorage.isDocumentUnique(formData.document, client?.id);
+          if (!isUnique) {
+            newErrors.document = formData.type === 'fisica' ? 'Este CPF já está cadastrado' : 'Este CNPJ já está cadastrado';
+          }
+        } catch (error) {
+          console.error('Erro ao verificar documento:', error);
+        }
+      }
     }
 
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email inválido';
+    } else if (formData.email) {
+      try {
+        const isUnique = await supabaseStorage.isEmailUnique(formData.email, client?.id);
+        if (!isUnique) {
+          newErrors.email = 'Este email já está cadastrado';
+        }
+      } catch (error) {
+        console.error('Erro ao verificar email:', error);
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
 
     const clientData: Client = {
       id: client?.id || crypto.randomUUID(),
@@ -75,6 +118,8 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
       email: formData.email!,
       phone: formData.phone!,
       address: formData.address || '',
+      number: formData.number || '',
+      neighborhood: formData.neighborhood || '',
       city: formData.city || '',
       state: formData.state || '',
       zipCode: formData.zipCode || '',
@@ -87,6 +132,11 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
   const handleDocumentChange = (value: string) => {
     const formatted = formatDocument(value, formData.type!);
     setFormData({ ...formData, document: formatted });
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhone(value);
+    setFormData({ ...formData, phone: formatted });
   };
 
   return (
@@ -187,7 +237,7 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
               <input
                 type="tel"
                 value={formData.phone || ''}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => handlePhoneChange(e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   errors.phone ? 'border-red-500' : 'border-gray-300'
                 }`}
@@ -197,39 +247,77 @@ export const ClientForm: React.FC<ClientFormProps> = ({ client, onSave, onCancel
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
-            <input
-              type="text"
-              value={formData.address || ''}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Rua, número, complemento"
-            />
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
               <input
                 type="text"
-                value={formData.city || ''}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                value={formData.address || ''}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Digite a cidade"
+                placeholder="Rua, avenida, etc."
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Número</label>
               <input
                 type="text"
-                value={formData.state || ''}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                value={formData.number || ''}
+                onChange={(e) => setFormData({ ...formData, number: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="UF"
-                maxLength={2}
+                placeholder="123"
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Bairro</label>
+            <input
+              type="text"
+              value={formData.neighborhood || ''}
+              onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Digite o bairro"
+            />
+          </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+              <select
+                value={formData.state || ''}
+                onChange={(e) => setFormData({ ...formData, state: e.target.value, city: '' })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Selecione um estado</option>
+                {states.map(state => (
+                  <option key={state.id} value={state.code}>
+                    {state.name} ({state.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+          
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
+              <select
+                value={formData.city || ''}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={!formData.state}
+              >
+                <option value="">Selecione uma cidade</option>
+                {filteredCities.map(city => (
+                  <option key={city.id} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+              {!formData.state && (
+                <p className="mt-1 text-sm text-gray-500">Selecione um estado primeiro</p>
+              )}
             </div>
 
             <div>
